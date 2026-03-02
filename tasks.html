@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>متابعة المواقع</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="المواقع">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" id="pwa-manifest">
+<link rel="apple-touch-icon" id="pwa-icon">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0d1117;
+  --bg2:     #161b22;
+  --bg3:     #1c2333;
+  --border:  #30363d;
+  --border2: #21262d;
+  --text:    #e6edf3;
+  --text2:   #8b949e;
+  --text3:   #6e7681;
+  --green:   #3fb950;
+  --green2:  #238636;
+  --orange:  #f0883e;
+  --orange2: #bd5500;
+  --red:     #f85149;
+  --red2:    #da3633;
+  --blue:    #58a6ff;
+  --blue2:   #1f6feb;
+  --yellow:  #e3b341;
+  --purple:  #bc8cff;
+  --teal:    #39d353;
+  --white:   #ffffff;
+  --nav-h:   60px;
+  --top-h:   52px;
+  --safe-b:  env(safe-area-inset-bottom, 0px);
+  --r:       10px;
+  --r2:      16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'Cairo',sans-serif;color:var(--text);font-size:14px;overscroll-behavior:none}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;background:var(--bg);position:relative}
+
+/* ── TOPBAR ── */
+.topbar{height:var(--top-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;position:relative;z-index:10}
+.topbar-back{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0}
+.topbar-title{font-family:'Tajawal',sans-serif;font-weight:800;font-size:16px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.icon-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:16px;cursor:pointer;padding:5px 9px;line-height:1;transition:all .15s}
+.icon-btn:active{background:var(--bg3)}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 12px)}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{height:calc(var(--nav-h) + var(--safe-b));padding-bottom:var(--safe-b);background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:stretch;flex-shrink:0;z-index:10}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;color:var(--text3);cursor:pointer;transition:color .15s;font-family:'Cairo',sans-serif}
+.nav-btn .ni{font-size:20px;line-height:1}
+.nav-btn .nl{font-size:10px;font-weight:700}
+.nav-btn.active{color:var(--blue)}
+.nav-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;gap:3px;font-family:'Cairo',sans-serif}
+.nav-center-circle{width:46px;height:46px;background:var(--blue2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--white);transform:translateY(-6px);box-shadow:0 4px 20px rgba(31,111,235,.5);transition:transform .15s}
+.nav-center:active .nav-center-circle{transform:translateY(-4px) scale(.95)}
+.nav-center .nl{font-size:10px;font-weight:700;color:var(--text3)}
+
+/* ── PAGES ── */
+.page{display:none;padding:14px}
+.page.active{display:block}
+
+/* ── SECTION HEADER ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-family:'Tajawal',sans-serif;font-weight:800;font-size:14px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+
+/* ── PROJECT CARD ── */
+.proj-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,transform .1s;position:relative;overflow:hidden}
+.proj-card:active{transform:scale(.98)}
+.proj-card.has-issues{border-color:var(--red2)}
+.proj-card.all-good{border-color:var(--green2)}
+.proj-stripe{position:absolute;top:0;right:0;width:4px;height:100%;background:var(--proj-c,var(--blue))}
+.proj-name{font-weight:800;font-size:15px;color:var(--text)}
+.proj-client{font-size:12px;color:var(--text3);margin-top:2px}
+.proj-stats{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.proj-stat{font-size:11px;color:var(--text2)}
+.proj-stat strong{color:var(--text);font-weight:700}
+.proj-progress{margin-top:10px}
+.prog-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.proj-thumb{width:100%;height:80px;object-fit:cover;border-radius:8px;margin-top:10px;border:1px solid var(--border)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+.badge-orange{background:rgba(240,136,62,.15);color:var(--orange)}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--blue)}
+.badge-yellow{background:rgba(227,179,65,.15);color:var(--yellow)}
+.badge-gray{background:rgba(139,148,158,.1);color:var(--text2)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+
+/* ── PHASE BLOCK ── */
+.phase-block{margin-bottom:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.phase-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s}
+.phase-head:active{background:var(--bg3)}
+.phase-name{font-weight:800;font-size:14px}
+.phase-meta{display:flex;gap:8px;align-items:center}
+.phase-body{display:none;border-top:1px solid var(--border2)}
+.phase-body.open{display:block}
+
+/* ── TASK ITEM ── */
+.task-item{padding:12px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:flex-start;gap:10px;transition:background .15s;cursor:pointer}
+.task-item:last-child{border-bottom:none}
+.task-item:active{background:var(--bg3)}
+.task-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .2s}
+.task-check.done{background:var(--green2);border-color:var(--green2);color:var(--white)}
+.task-check.inprog{background:var(--orange2);border-color:var(--orange2);color:var(--white)}
+.task-check.blocked{background:var(--red2);border-color:var(--red2);color:var(--white)}
+.task-body{flex:1;min-width:0}
+.task-name{font-weight:700;font-size:13px;color:var(--text)}
+.task-name.done{text-decoration:line-through;color:var(--text3)}
+.task-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.task-issue{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:6px;padding:5px 8px;margin-top:6px;font-size:11px;color:var(--red);display:flex;gap:6px;align-items:flex-start}
+.task-right{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.task-thumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer}
+
+/* ── PHASE ADD TASK BTN ── */
+.add-task-row{padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text3);font-size:12px;font-weight:700;border-top:1px solid var(--border2);transition:all .15s}
+.add-task-row:active{background:var(--bg3);color:var(--blue)}
+
+/* ── PHOTOS GRID ── */
+.photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.photo-item{aspect-ratio:1;position:relative;border-radius:8px;overflow:hidden;cursor:pointer}
+.photo-item img{width:100%;height:100%;object-fit:cover;transition:transform .2s}
+.photo-item:active img{transform:scale(.95)}
+.photo-overlay{position:absolute;bottom:0;left:0;right:0;padding:4px 6px;background:linear-gradient(transparent,rgba(0,0,0,.7));font-size:9px;color:rgba(255,255,255,.8)}
+.photo-add{border:1.5px dashed var(--border);border-radius:8px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--text3);font-size:11px;font-weight:700;transition:all .15s}
+.photo-add:active{border-color:var(--blue);color:var(--blue)}
+
+/* ── ISSUES LIST ── */
+.issue-item{background:rgba(248,81,73,.05);border:1px solid rgba(248,81,73,.2);border-radius:var(--r);padding:12px;margin-bottom:8px}
+.issue-title{font-weight:700;font-size:13px;color:var(--red);margin-bottom:4px}
+.issue-meta{font-size:11px;color:var(--text3)}
+.issue-resolve{background:none;border:1px solid var(--green2);color:var(--green);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;margin-top:8px}
+
+/* ── VISIT LOG ── */
+.visit-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.visit-item:last-child{border-bottom:none}
+.visit-dot{width:10px;height:10px;background:var(--blue);border-radius:50%;margin-top:4px;flex-shrink:0}
+.visit-date{font-size:11px;color:var(--text3);margin-top:2px}
+.visit-note{font-size:13px;color:var(--text)}
+
+/* ── FORM ── */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--r);font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);direction:rtl;transition:border-color .15s;-webkit-appearance:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--blue)}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238b949e' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 10px center;background-size:20px;padding-left:34px}
+.form-textarea{min-height:80px;resize:vertical}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 18px;border-radius:var(--r);font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .15s;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--blue2);color:var(--white)}
+.btn-success{background:var(--green2);color:var(--white)}
+.btn-danger{background:var(--red2);color:var(--white)}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-orange{background:var(--orange2);color:var(--white)}
+.btn-sm{padding:7px 12px;font-size:12px;width:auto}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border-radius:var(--r2) var(--r2) 0 0;width:100%;max-height:94dvh;overflow-y:auto;animation:slideUp .28s cubic-bezier(.34,1.2,.64,1);border-top:1px solid var(--border)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0}
+.modal-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-family:'Tajawal',sans-serif;font-weight:800;font-size:16px}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3);padding:4px;line-height:1}
+.modal-body{padding:18px}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--border)}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:11px 16px;font-size:12px;font-weight:700;color:var(--text3);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-pane{display:none;padding:14px}
+.tab-pane.active{display:block}
+
+/* ── STATS STRIP ── */
+.stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+.stat-val{font-family:'Tajawal',sans-serif;font-weight:900;font-size:22px;color:var(--text)}
+.stat-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-top:2px}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty .em{font-size:44px;margin-bottom:10px}
+.empty p{font-size:13px}
+
+/* ── IMG VIEWER ── */
+.img-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:500;align-items:center;justify-content:center}
+.img-modal.open{display:flex}
+.img-modal img{max-width:98vw;max-height:92dvh;object-fit:contain;border-radius:8px}
+.img-modal-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.1);border:none;color:var(--white);width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;top:calc(var(--top-h)+8px);left:50%;transform:translateX(-50%);z-index:999;width:90%;max-width:380px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:fadeDown .3s ease;text-align:center}
+.toast.success{background:#1a3a21;border-color:var(--green2);color:var(--green)}
+.toast.error{background:#3a1a1a;border-color:var(--red2);color:var(--red)}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PWA BANNER ── */
+.pwa-banner{display:none;position:fixed;bottom:calc(var(--nav-h)+var(--safe-b)+10px);left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:var(--r);box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:100;align-items:center;gap:10px;font-size:13px;width:90%;max-width:380px}
+.pwa-banner.show{display:flex}
+
+/* ── RECEIPT THUMB ── */
+.rthumbnail{width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;flex-shrink:0}
+
+/* ── GDRIVE ── */
+.gdrive-btn{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;color:var(--text2);transition:border-color .15s;width:100%;margin-bottom:8px}
+.gdrive-btn:active{border-color:var(--blue)}
+
+/* ── VISIT CARD ── */
+.visit-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px}
+.visit-proj{font-weight:700;font-size:12px;color:var(--blue);margin-bottom:4px}
+.visit-note-text{font-size:13px;color:var(--text)}
+.visit-imgs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+
+/* ── SETTINGS ── */
+.sett-group{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.sett-item{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border2)}
+.sett-item:last-child{border-bottom:none}
+.sett-label{font-size:13px;font-weight:700;color:var(--text)}
+.sett-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.del-btn{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px}
+
+/* ── SECTION TOGGLE for phase ── */
+.phase-toggle{font-size:16px;color:var(--text3);transition:transform .2s}
+.phase-toggle.open{transform:rotate(90deg)}
+
+@media(min-width:481px){.app{box-shadow:0 0 80px rgba(0,0,0,.5)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button class="topbar-back" id="back-btn" style="display:none" onclick="goBack()">‹</button>
+    <div class="topbar-title" id="topbar-title">المواقع 🏗️</div>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="stats-strip" id="home-stats"></div>
+      <div class="sec-hd">
+        <span class="sec-title">المشاريع النشطة</span>
+        <button class="btn btn-ghost btn-sm" onclick="goto('projects')">الكل</button>
+      </div>
+      <div id="home-projects"></div>
+    </div>
+
+    <!-- PROJECTS LIST -->
+    <div class="page" id="page-projects">
+      <div id="projects-list"></div>
+    </div>
+
+    <!-- PROJECT DETAIL -->
+    <div class="page" id="page-project">
+      <div id="project-tabs" class="tabs" style="margin:-14px -14px 0;border-radius:0">
+        <div class="tab active" onclick="switchProjectTab('tasks')">📋 المهام</div>
+        <div class="tab" onclick="switchProjectTab('photos')">📸 الصور</div>
+        <div class="tab" onclick="switchProjectTab('issues')">⚠️ المشاكل</div>
+        <div class="tab" onclick="switchProjectTab('visits')">🗓️ الزيارات</div>
+      </div>
+      <div class="tab-pane active" id="proj-tasks" style="padding:14px 0"></div>
+      <div class="tab-pane" id="proj-photos"></div>
+      <div class="tab-pane" id="proj-issues"></div>
+      <div class="tab-pane" id="proj-visits"></div>
+    </div>
+
+    <!-- ADD VISIT (quick log) -->
+    <div class="page" id="page-add">
+      <div class="form-group">
+        <label class="form-label">الموقع *</label>
+        <select class="form-select" id="v-project"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">التاريخ *</label>
+        <input type="date" class="form-input" id="v-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات الزيارة</label>
+        <textarea class="form-textarea" id="v-note" placeholder="إيه اللي شفته النهارده؟ إيه الإيجابيات والسلبيات؟"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📸 صور من الموقع</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+            📷 إضافة صور
+            <input type="file" id="v-imgs" accept="image/*" multiple style="display:none" onchange="previewVisitImgs(this)">
+          </label>
+          <div id="v-imgs-preview" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">هل في مشكلة أو واقف؟</label>
+        <textarea class="form-textarea" id="v-issue" placeholder="اكتب المشكلة هنا... (اتركها فاضية لو مفيش)" style="min-height:60px"></textarea>
+      </div>
+      <div style="margin-top:8px">
+        <button class="btn btn-primary" onclick="saveVisit()">💾 حفظ الزيارة</button>
+      </div>
+    </div>
+
+    <!-- ALL ISSUES -->
+    <div class="page" id="page-issues">
+      <div id="issues-list"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="sec-hd">
+        <span class="sec-title">المشاريع</span>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-project')">+ مشروع</button>
+      </div>
+      <div class="sett-group" id="sett-projects"></div>
+
+      <div class="sec-hd" style="margin-top:16px">
+        <span class="sec-title">النسخ الاحتياطي</span>
+      </div>
+      <button class="gdrive-btn" onclick="gdriveSave()">
+        <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png" style="width:20px;height:20px"> حفظ على Google Drive
+      </button>
+      <button class="gdrive-btn" onclick="gdriveLoad()">
+        <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png" style="width:20px;height:20px"> استيراد من Google Drive
+      </button>
+      <button class="gdrive-btn" onclick="exportJSON()">📤 تصدير JSON</button>
+      <label class="gdrive-btn" style="cursor:pointer">📥 استيراد JSON <input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
+      <div id="gdrive-status" style="font-size:11px;color:var(--text3);text-align:center;margin-top:4px"></div>
+
+      <div class="sec-hd" style="margin-top:20px">
+        <span class="sec-title" style="color:var(--red)">خطر</span>
+      </div>
+      <button class="btn btn-danger" onclick="if(confirm('مسح كل البيانات؟'))clearAll()">🗑️ مسح كل البيانات</button>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="goto('home')">
+      <span class="ni">🏠</span><span class="nl">الرئيسية</span>
+    </button>
+    <button class="nav-btn" id="nav-projects" onclick="goto('projects')">
+      <span class="ni">📁</span><span class="nl">المشاريع</span>
+    </button>
+    <button class="nav-center" onclick="goto('add')">
+      <div class="nav-center-circle">＋</div>
+      <span class="nl">زيارة</span>
+    </button>
+    <button class="nav-btn" id="nav-issues" onclick="goto('issues')">
+      <span class="ni">⚠️</span><span class="nl">المشاكل</span>
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="goto('settings')">
+      <span class="ni">⚙️</span><span class="nl">إعدادات</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- ════════════ MODALS ════════════ -->
+
+<!-- Add Project -->
+<div class="modal-overlay" id="modal-project">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><span class="modal-title">📁 مشروع جديد</span><button class="modal-close" onclick="closeModal('modal-project')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">اسم المشروع *</label><input type="text" class="form-input" id="pf-name" placeholder="مثال: فيلا أ. أحمد — الشيخ زايد"></div>
+      <div class="form-group"><label class="form-label">اسم العميل</label><input type="text" class="form-input" id="pf-client"></div>
+      <div class="form-group"><label class="form-label">تاريخ التسليم المتوقع</label><input type="date" class="form-input" id="pf-deadline"></div>
+      <div class="form-group"><label class="form-label">لون المشروع</label><input type="color" class="form-input" id="pf-color" value="#58a6ff" style="height:46px;padding:6px"></div>
+      <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-textarea" id="pf-notes" placeholder="وصف سريع للمشروع..."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-success" onclick="saveProject()">✅ إضافة المشروع</button></div>
+  </div>
+</div>
+
+<!-- Add Phase -->
+<div class="modal-overlay" id="modal-phase">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><span class="modal-title">🔷 مرحلة جديدة</span><button class="modal-close" onclick="closeModal('modal-phase')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="phf-project-id">
+      <div class="form-group"><label class="form-label">اسم المرحلة *</label><input type="text" class="form-input" id="phf-name" placeholder="مثال: تشطيب خشن، كهرباء، سباكة..."></div>
+      <div class="form-group"><label class="form-label">ترتيب المرحلة</label><input type="number" class="form-input" id="phf-order" value="1" inputmode="numeric"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-primary" onclick="savePhase()">✅ إضافة</button></div>
+  </div>
+</div>
+
+<!-- Add Task -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><span class="modal-title">✅ مهمة جديدة</span><button class="modal-close" onclick="closeModal('modal-task')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="tf-phase-id">
+      <input type="hidden" id="tf-project-id">
+      <div class="form-group"><label class="form-label">اسم المهمة *</label><input type="text" class="form-input" id="tf-name" placeholder="مثال: تركيب لوحة الكهرباء الرئيسية"></div>
+      <div class="form-group"><label class="form-label">المقاول المسؤول</label><input type="text" class="form-input" id="tf-contractor" placeholder="اسم المقاول أو الشركة"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">تاريخ البداية</label><input type="date" class="form-input" id="tf-start"></div>
+        <div class="form-group"><label class="form-label">تاريخ التسليم</label><input type="date" class="form-input" id="tf-due"></div>
+      </div>
+      <div class="form-group"><label class="form-label">الحالة</label>
+        <select class="form-select" id="tf-status">
+          <option value="pending">⏳ لسة</option>
+          <option value="inprog">🔧 شغالة</option>
+          <option value="done">✅ خلصت</option>
+          <option value="blocked">🚫 واقفة</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">ملاحظات</label><textarea class="form-textarea" id="tf-notes" placeholder="أي تفاصيل..." style="min-height:60px"></textarea></div>
+      <div class="form-group"><label class="form-label">مشكلة أو سبب الوقوف</label><textarea class="form-textarea" id="tf-issue" placeholder="اترك فاضياً لو مفيش مشكلة" style="min-height:60px"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">📎 صورة</label>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">📷 صورة<input type="file" id="tf-img" accept="image/*" style="display:none" onchange="previewSingle('tf-img','tf-img-preview')"></label>
+          <img id="tf-img-preview" src="" style="display:none;max-height:50px;border-radius:6px;cursor:pointer" onclick="viewImg(this.src)">
+          <button class="btn btn-ghost btn-sm" id="tf-img-clear" style="display:none;color:var(--red)" onclick="clearSingle('tf-img','tf-img-preview','tf-img-clear')">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('modal-task')">إلغاء</button>
+      <button class="btn btn-success" onclick="saveTask()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail / Edit -->
+<div class="modal-overlay" id="modal-task-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><span class="modal-title" id="td-title">تفاصيل المهمة</span><button class="modal-close" onclick="closeModal('modal-task-detail')">✕</button></div>
+    <div class="modal-body" id="td-body"></div>
+    <div class="modal-foot btn-row" id="td-foot"></div>
+  </div>
+</div>
+
+<!-- Add Photo -->
+<div class="modal-overlay" id="modal-photo">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><span class="modal-title">📸 إضافة صورة</span><button class="modal-close" onclick="closeModal('modal-photo')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="phof-project-id">
+      <div class="form-group"><label class="form-label">الصورة *</label>
+        <label class="btn btn-ghost" style="cursor:pointer">
+          📷 اختر صورة
+          <input type="file" id="phof-img" accept="image/*" style="display:none" onchange="previewSingle('phof-img','phof-preview')">
+        </label>
+        <img id="phof-preview" src="" style="display:none;width:100%;border-radius:8px;margin-top:10px;cursor:pointer" onclick="viewImg(this.src)">
+      </div>
+      <div class="form-group"><label class="form-label">المرحلة</label><select class="form-select" id="phof-phase"></select></div>
+      <div class="form-group"><label class="form-label">وصف</label><input type="text" class="form-input" id="phof-desc" placeholder="ما الصورة دي؟"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-success" onclick="savePhoto()">💾 إضافة</button></div>
+  </div>
+</div>
+
+<!-- IMG VIEWER -->
+<div class="img-modal" id="img-modal" onclick="document.getElementById('img-modal').classList.remove('open')">
+  <button class="img-modal-close">✕</button>
+  <img id="img-modal-src" src="" alt="">
+</div>
+
+<!-- PWA BANNER -->
+<div class="pwa-banner" id="pwa-banner">
+  <span style="flex:1">📱 ثبّت التطبيق</span>
+  <button class="btn btn-primary btn-sm" onclick="installPWA()">تثبيت</button>
+  <button class="btn btn-ghost btn-sm" style="border:none;color:var(--text3)" onclick="document.getElementById('pwa-banner').classList.remove('show')">لا</button>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ════════════════════════════
+// STATE
+// ════════════════════════════
+const KEY = 'maktab_sites_v1';
+
+function defaultState() {
+  return {
+    projects: [
+      {
+        id:'p1', name:'منزل أ. محمد شبل — المدخل والسلم', client:'أ. محمد شبل',
+        color:'#f0883e', deadline:'2026-06-01', notes:'',
+        phases: [
+          { id:'ph1', name:'كهرباء', order:1 },
+          { id:'ph2', name:'سباكة', order:2 },
+          { id:'ph3', name:'دهانات', order:3 },
+        ],
+        tasks: [
+          { id:'t1', phaseId:'ph1', name:'تركيب لوحة الكهرباء الرئيسية', contractor:'كهربائي أحمد', start:'2026-02-01', due:'2026-02-10', status:'done', notes:'', issue:'', image:null },
+          { id:'t2', phaseId:'ph1', name:'توصيل الإنتركم', contractor:'كهربائي أحمد', start:'2026-02-10', due:'2026-02-15', status:'done', notes:'', issue:'', image:null },
+          { id:'t3', phaseId:'ph2', name:'تركيب مواسير الصرف', contractor:'سباك حسين', start:'2026-02-15', due:'2026-02-25', status:'inprog', notes:'', issue:'', image:null },
+          { id:'t4', phaseId:'ph3', name:'بياض الجدران', contractor:'', start:'', due:'2026-03-20', status:'pending', notes:'', issue:'', image:null },
+          { id:'t5', phaseId:'ph3', name:'دهان أول هاند', contractor:'', start:'', due:'', status:'blocked', notes:'', issue:'محتاج موافقة العميل على اللون', image:null },
+        ],
+        photos: [],
+        visits: []
+      },
+      {
+        id:'p2', name:'فيلا أ. كريم — المعادي', client:'أ. كريم',
+        color:'#58a6ff', deadline:'2026-09-01', notes:'',
+        phases: [
+          { id:'ph4', name:'هيكل', order:1 },
+          { id:'ph5', name:'تشطيب خشن', order:2 },
+        ],
+        tasks: [
+          { id:'t6', phaseId:'ph4', name:'صب الأسقف', contractor:'مقاول عام', start:'2026-01-01', due:'2026-02-01', status:'done', notes:'', issue:'', image:null },
+          { id:'t7', phaseId:'ph5', name:'تكسير وتمديد كهرباء', contractor:'كهربائي محمود', start:'2026-02-14', due:'2026-03-10', status:'inprog', notes:'', issue:'', image:null },
+          { id:'t8', phaseId:'ph5', name:'تمديد سباكة', contractor:'', start:'', due:'2026-03-15', status:'blocked', notes:'', issue:'في انتظار وصول البويلر', image:null },
+        ],
+        photos: [],
+        visits: []
+      }
+    ]
+  };
+}
+
+let state = (() => {
+  try { const s=localStorage.getItem(KEY); return s?JSON.parse(s):defaultState(); }
+  catch(e) { return defaultState(); }
+})();
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+// ════════════════════════════
+// NAVIGATION
+// ════════════════════════════
+let pageStack = ['home'];
+let currentProjId = null;
+let currentProjTab = 'tasks';
+
+const NAV_IDS = ['home','projects','add','issues','settings'];
+const TITLES = {
+  home:'المواقع 🏗️', projects:'كل المشاريع', add:'تسجيل زيارة',
+  project:'', issues:'المشاكل النشطة', settings:'الإعدادات'
+};
+
+function goto(page, projId) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('page-'+page);
+  if(!pg) return;
+  pg.classList.add('active');
+  document.getElementById('content').scrollTo(0,0);
+
+  if(NAV_IDS.includes(page)) pageStack=[page];
+  else { pageStack=pageStack.filter(p=>p!==page); pageStack.push(page); }
+
+  currentProjId = projId||null;
+
+  let title = TITLES[page]||'';
+  if(page==='project'&&projId) title=state.projects.find(p=>p.id===projId)?.name||'';
+  document.getElementById('topbar-title').textContent=title;
+  document.getElementById('back-btn').style.display = pageStack.length>1?'block':'none';
+
+  document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
+  const nb=document.getElementById('nav-'+page);
+  if(nb) nb.classList.add('active');
+
+  updateTopbarActions(page,projId);
+
+  if(page==='home')     renderHome();
+  if(page==='projects') renderProjectsList();
+  if(page==='project')  { renderProjectTasks(projId); renderProjectPhotos(projId); renderProjectIssues(projId); renderProjectVisits(projId); switchProjectTab(currentProjTab||'tasks'); }
+  if(page==='add')      renderAddVisit();
+  if(page==='issues')   renderAllIssues();
+  if(page==='settings') renderSettings();
+}
+
+function goBack() {
+  pageStack.pop();
+  const prev=pageStack[pageStack.length-1]||'home';
+  goto(prev, prev==='project'?currentProjId:null);
+}
+
+function updateTopbarActions(page, projId) {
+  const wrap=document.getElementById('topbar-actions');
+  if(page==='project'&&projId) {
+    wrap.innerHTML=`<button class="icon-btn" onclick="openAddPhase('${projId}')" title="+ مرحلة">+ مرحلة</button>`;
+  } else {
+    wrap.innerHTML='';
+  }
+}
+
+function switchProjectTab(tab) {
+  currentProjTab=tab;
+  document.querySelectorAll('#project-tabs .tab').forEach((t,i)=>t.classList.toggle('active',['tasks','photos','issues','visits'][i]===tab));
+  ['proj-tasks','proj-photos','proj-issues','proj-visits'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const map={tasks:'proj-tasks',photos:'proj-photos',issues:'proj-issues',visits:'proj-visits'};
+  document.getElementById(map[tab]).classList.add('active');
+}
+
+// ════════════════════════════
+// HOME
+// ════════════════════════════
+function renderHome() {
+  const allTasks   = state.projects.flatMap(p=>p.tasks||[]);
+  const blocked    = allTasks.filter(t=>t.status==='blocked').length;
+  const inprog     = allTasks.filter(t=>t.status==='inprog').length;
+  const done       = allTasks.filter(t=>t.status==='done').length;
+
+  document.getElementById('home-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-val" style="color:var(--red)">${blocked}</div><div class="stat-label">واقفة</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--orange)">${inprog}</div><div class="stat-label">شغالة</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--green)">${done}</div><div class="stat-label">خلصت</div></div>`;
+
+  document.getElementById('home-projects').innerHTML = state.projects.map(p=>{
+    const tasks   = p.tasks||[];
+    const total   = tasks.length;
+    const doneCnt = tasks.filter(t=>t.status==='done').length;
+    const blkCnt  = tasks.filter(t=>t.status==='blocked').length;
+    const pp      = total?Math.round(doneCnt/total*100):0;
+    const lastPh  = [...(p.photos||[])].sort((a,b)=>b.date?.localeCompare(a.date||'')||0).slice(0,1);
+    const hasIssue= blkCnt>0;
+    const daysLeft= p.deadline?Math.ceil((new Date(p.deadline)-new Date())/(86400000)):null;
+
+    return `<div class="proj-card ${hasIssue?'has-issues':pp===100?'all-good':''}" style="--proj-c:${p.color}" onclick="goto('project','${p.id}')">
+      <div class="proj-stripe"></div>
+      <div style="padding-right:10px">
+        <div class="card-row" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div>
+            <div class="proj-name">${p.name}</div>
+            <div class="proj-client">${p.client||''}</div>
+          </div>
+          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            ${hasIssue?`<span class="badge badge-red">⚠️ ${blkCnt} واقف</span>`:''}
+            ${daysLeft!==null?`<span class="badge ${daysLeft<14?'badge-red':daysLeft<30?'badge-orange':'badge-gray'}">${daysLeft>0?daysLeft+' يوم':'تأخر'}</span>`:''}
+          </div>
+        </div>
+        <div class="proj-stats">
+          <span class="proj-stat">المهام: <strong>${doneCnt}/${total}</strong></span>
+          <span class="proj-stat" style="color:var(--orange)">شغالة: <strong>${tasks.filter(t=>t.status==='inprog').length}</strong></span>
+        </div>
+        <div class="proj-progress">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:3px"><span>التقدم</span><span>${pp}%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${pp}%;background:${p.color}"></div></div>
+        </div>
+        ${lastPh.length&&lastPh[0].image?`<img src="${lastPh[0].image}" class="proj-thumb" onclick="event.stopPropagation();viewImg('${lastPh[0].image}')">`:``}
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty"><div class="em">📁</div><p>لا توجد مشاريع — أضف من الإعدادات</p></div>';
+}
+
+// ════════════════════════════
+// PROJECTS LIST
+// ════════════════════════════
+function renderProjectsList() {
+  document.getElementById('projects-list').innerHTML = state.projects.map(p=>{
+    const tasks=p.tasks||[];
+    const done=tasks.filter(t=>t.status==='done').length;
+    const pp=tasks.length?Math.round(done/tasks.length*100):0;
+    return `<div class="proj-card" style="--proj-c:${p.color}" onclick="goto('project','${p.id}')">
+      <div class="proj-stripe"></div>
+      <div style="padding-right:10px">
+        <div class="proj-name">${p.name}</div>
+        <div class="proj-client">${p.client||''}</div>
+        <div class="proj-stats" style="margin-top:8px">
+          <span class="proj-stat">المهام: <strong>${done}/${tasks.length}</strong></span>
+          ${p.deadline?`<span class="proj-stat">التسليم: <strong>${fmtDate(p.deadline)}</strong></span>`:''}
+        </div>
+        <div class="proj-progress">
+          <div class="prog-bar" style="margin-top:6px"><div class="prog-fill" style="width:${pp}%;background:${p.color}"></div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty"><div class="em">📁</div><p>لا توجد مشاريع</p></div>';
+}
+
+// ════════════════════════════
+// PROJECT TASKS
+// ════════════════════════════
+const STATUS_ICONS={pending:'⏳',inprog:'🔧',done:'✅',blocked:'🚫'};
+const STATUS_LABELS={pending:'لسة',inprog:'شغالة',done:'خلصت',blocked:'واقفة'};
+const STATUS_BADGE={pending:'badge-gray',inprog:'badge-orange',done:'badge-green',blocked:'badge-red'};
+
+function renderProjectTasks(projId) {
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj){document.getElementById('proj-tasks').innerHTML='';return;}
+  const phases=[...(proj.phases||[])].sort((a,b)=>Number(a.order)-Number(b.order));
+
+  document.getElementById('proj-tasks').innerHTML = phases.map(ph=>{
+    const tasks=(proj.tasks||[]).filter(t=>t.phaseId===ph.id);
+    const done=tasks.filter(t=>t.status==='done').length;
+    const blocked=tasks.filter(t=>t.status==='blocked').length;
+    return `
+      <div class="phase-block">
+        <div class="phase-head" onclick="togglePhase('ph-body-${ph.id}','ph-arrow-${ph.id}')">
+          <div>
+            <div class="phase-name">${ph.name}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${done}/${tasks.length} مهمة${blocked?` · <span style="color:var(--red)">⚠️ ${blocked} واقف</span>`:''}</div>
+          </div>
+          <div class="phase-meta">
+            <div style="font-size:10px;font-family:'Tajawal',sans-serif;font-weight:800;color:var(--text2)">${tasks.length?Math.round(done/tasks.length*100):0}%</div>
+            <span class="phase-toggle" id="ph-arrow-${ph.id}">›</span>
+          </div>
+        </div>
+        <div class="phase-body open" id="ph-body-${ph.id}">
+          ${tasks.map(t=>taskItem(t,proj)).join('')}
+          <div class="add-task-row" onclick="openAddTask('${proj.id}','${ph.id}')">
+            <span>＋</span><span>إضافة مهمة</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('')||'<div style="padding:20px;text-align:center;color:var(--text3)">لا توجد مراحل — اضغط "+ مرحلة" من الأعلى</div>';
+}
+
+function taskItem(t,proj) {
+  const checkClass = {pending:'',inprog:'inprog',done:'done',blocked:'blocked'}[t.status]||'';
+  const checkIcon  = {pending:'',inprog:'⚙',done:'✓',blocked:'✕'}[t.status]||'';
+  return `<div class="task-item" onclick="openTaskDetail('${proj.id}','${t.id}')">
+    <div class="task-check ${checkClass}">${checkIcon}</div>
+    <div class="task-body">
+      <div class="task-name ${t.status==='done'?'done':''}">${t.name}</div>
+      <div class="task-meta">
+        ${t.contractor?`<span>👷 ${t.contractor}</span>`:''}
+        ${t.due?`<span>📅 ${fmtDate(t.due)}</span>`:''}
+        ${t.status==='blocked'&&t.issue?`<div class="task-issue" style="margin-top:4px">⚠️ ${t.issue}</div>`:''}
+      </div>
+    </div>
+    <div class="task-right">
+      <span class="badge ${STATUS_BADGE[t.status]}">${STATUS_ICONS[t.status]} ${STATUS_LABELS[t.status]}</span>
+      ${t.image?`<img src="${t.image}" class="task-thumb" onclick="event.stopPropagation();viewImg('${t.image}')">`:``}
+    </div>
+  </div>`;
+}
+
+function togglePhase(bodyId, arrowId) {
+  const body=document.getElementById(bodyId);
+  const arrow=document.getElementById(arrowId);
+  const isOpen=body.classList.toggle('open');
+  if(arrow) arrow.style.transform=isOpen?'rotate(90deg)':'';
+}
+
+// ════════════════════════════
+// PROJECT PHOTOS
+// ════════════════════════════
+function renderProjectPhotos(projId) {
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj){return;}
+  const photos=[...(proj.photos||[])].sort((a,b)=>b.date?.localeCompare(a.date||'')||0);
+  document.getElementById('proj-photos').innerHTML = `
+    <div class="photos-grid">
+      <div class="photo-add" onclick="openAddPhoto('${projId}')">
+        <span style="font-size:28px">📷</span>
+        <span>إضافة صورة</span>
+      </div>
+      ${photos.map(ph=>`
+        <div class="photo-item" onclick="viewImg('${ph.image}')">
+          <img src="${ph.image}" alt="">
+          <div class="photo-overlay">${ph.desc||fmtDate(ph.date)}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ════════════════════════════
+// PROJECT ISSUES
+// ════════════════════════════
+function renderProjectIssues(projId) {
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj){return;}
+  const blocked=(proj.tasks||[]).filter(t=>t.status==='blocked'||t.issue);
+  document.getElementById('proj-issues').innerHTML = blocked.length ? blocked.map(t=>`
+    <div class="issue-item">
+      <div class="issue-title">⚠️ ${t.name}</div>
+      <div class="issue-meta">${t.issue||'لا يوجد وصف'}</div>
+      ${t.contractor?`<div class="issue-meta" style="margin-top:4px">👷 ${t.contractor}</div>`:''}
+      <button class="issue-resolve" onclick="resolveIssue('${projId}','${t.id}')">✓ تم الحل</button>
+    </div>`).join('') :
+    '<div class="empty"><div class="em">✅</div><p>مفيش مشاكل دلوقتي</p></div>';
+}
+
+// ════════════════════════════
+// PROJECT VISITS
+// ════════════════════════════
+function renderProjectVisits(projId) {
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj){return;}
+  const visits=[...(proj.visits||[])].sort((a,b)=>b.date?.localeCompare(a.date||'')||0);
+  document.getElementById('proj-visits').innerHTML = `
+    <button class="btn btn-primary btn-sm" style="margin-bottom:12px" onclick="goto('add');document.getElementById('v-project').value='${projId}'">+ تسجيل زيارة جديدة</button>
+    ${visits.length ? visits.map(v=>`
+      <div class="visit-card">
+        <div class="visit-proj">${fmtDate(v.date)}</div>
+        <div class="visit-note-text">${v.note||'لا توجد ملاحظات'}</div>
+        ${v.issue?`<div class="task-issue" style="margin-top:8px">⚠️ ${v.issue}</div>`:''}
+        ${(v.images||[]).length?`<div class="visit-imgs">${v.images.map(img=>`<img src="${img}" class="rthumbnail" onclick="viewImg('${img}')">`).join('')}</div>`:''}
+      </div>`).join('') :
+    '<div class="empty"><div class="em">🗓️</div><p>لا توجد زيارات مسجلة</p></div>'}`;
+}
+
+// ════════════════════════════
+// ALL ISSUES
+// ════════════════════════════
+function renderAllIssues() {
+  let html = '';
+  state.projects.forEach(p=>{
+    const blocked=(p.tasks||[]).filter(t=>t.status==='blocked'||t.issue);
+    if(!blocked.length)return;
+    html+=`<div style="margin-bottom:6px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${p.name}</div>`;
+    blocked.forEach(t=>{
+      html+=`<div class="issue-item">
+        <div class="issue-title">⚠️ ${t.name}</div>
+        <div class="issue-meta">${t.issue||'لا يوجد وصف'}</div>
+        ${t.contractor?`<div class="issue-meta">👷 ${t.contractor}</div>`:''}
+        <button class="issue-resolve" onclick="resolveIssue('${p.id}','${t.id}')">✓ تم الحل</button>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('issues-list').innerHTML=html||'<div class="empty"><div class="em">✅</div><p>مفيش مشاكل نشطة في أي موقع</p></div>';
+}
+
+// ════════════════════════════
+// ADD VISIT
+// ════════════════════════════
+function renderAddVisit() {
+  const sel=document.getElementById('v-project');
+  sel.innerHTML=state.projects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('v-date').value=today();
+  document.getElementById('v-note').value='';
+  document.getElementById('v-issue').value='';
+  document.getElementById('v-imgs-preview').innerHTML='';
+  visitImgsList=[];
+}
+
+let visitImgsList=[];
+
+function previewVisitImgs(input) {
+  const files=Array.from(input.files);
+  const wrap=document.getElementById('v-imgs-preview');
+  files.forEach(file=>{
+    if(file.size>4*1024*1024){toast('صورة أكبر من 4MB','error');return;}
+    const reader=new FileReader();
+    reader.onload=e=>{
+      visitImgsList.push(e.target.result);
+      const img=document.createElement('img');
+      img.src=e.target.result;
+      img.className='rthumbnail';
+      img.onclick=()=>viewImg(e.target.result);
+      wrap.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function saveVisit() {
+  const projId=document.getElementById('v-project').value;
+  const date=document.getElementById('v-date').value;
+  const note=document.getElementById('v-note').value.trim();
+  const issue=document.getElementById('v-issue').value.trim();
+  if(!projId||!date){toast('اختار الموقع والتاريخ','error');return;}
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj)return;
+  if(!proj.visits)proj.visits=[];
+  proj.visits.push({id:'v'+Date.now(),date,note,issue,images:[...visitImgsList]});
+  // If issue noted, add it as a blocked note to project
+  save();
+  toast('✅ تم حفظ الزيارة','success');
+  visitImgsList=[];
+  goto('home');
+}
+
+// ════════════════════════════
+// TASK DETAIL
+// ════════════════════════════
+function openTaskDetail(projId, taskId) {
+  const proj=state.projects.find(p=>p.id===projId);
+  const task=proj?.tasks?.find(t=>t.id===taskId);
+  if(!task)return;
+  const ph=proj.phases?.find(p=>p.id===task.phaseId);
+  document.getElementById('td-title').textContent=task.name;
+  document.getElementById('td-body').innerHTML=`
+    <div class="form-group"><label class="form-label">الحالة</label>
+      <select class="form-select" id="td-status" onchange="quickUpdateTask('${projId}','${taskId}','status',this.value)">
+        ${['pending','inprog','done','blocked'].map(s=>`<option value="${s}" ${task.status===s?'selected':''}>${STATUS_ICONS[s]} ${STATUS_LABELS[s]}</option>`).join('')}
+      </select>
+    </div>
+    ${ph?`<div class="form-group"><div class="form-label">المرحلة</div><div style="color:var(--blue);font-weight:700">${ph.name}</div></div>`:''}
+    ${task.contractor?`<div class="form-group"><div class="form-label">المقاول</div><div style="font-weight:700">👷 ${task.contractor}</div></div>`:''}
+    ${task.due?`<div class="form-group"><div class="form-label">تاريخ التسليم</div><div style="font-weight:700">📅 ${fmtDate(task.due)}</div></div>`:''}
+    ${task.notes?`<div class="form-group"><div class="form-label">ملاحظات</div><div style="color:var(--text2)">${task.notes}</div></div>`:''}
+    ${task.issue?`<div class="task-issue" style="margin-bottom:12px">⚠️ ${task.issue}</div>`:''}
+    ${task.image?`<img src="${task.image}" style="width:100%;border-radius:8px;margin-bottom:12px;cursor:pointer" onclick="viewImg('${task.image}')">`:``}
+  `;
+  document.getElementById('td-foot').innerHTML=`
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('modal-task-detail')">إغلاق</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteTask('${projId}','${taskId}')">🗑️ حذف</button>
+    </div>`;
+  openModal('modal-task-detail');
+}
+
+function quickUpdateTask(projId,taskId,field,val) {
+  const proj=state.projects.find(p=>p.id===projId);
+  const task=proj?.tasks?.find(t=>t.id===taskId);
+  if(task){task[field]=val;save();renderProjectTasks(projId);renderProjectIssues(projId);toast('✅ تم التحديث','success');}
+}
+
+function deleteTask(projId,taskId) {
+  if(!confirm('حذف هذه المهمة؟'))return;
+  const proj=state.projects.find(p=>p.id===projId);
+  if(proj){proj.tasks=proj.tasks.filter(t=>t.id!==taskId);save();closeModal('modal-task-detail');renderProjectTasks(projId);toast('تم الحذف');}
+}
+
+function resolveIssue(projId,taskId) {
+  const proj=state.projects.find(p=>p.id===projId);
+  const task=proj?.tasks?.find(t=>t.id===taskId);
+  if(task){task.status='inprog';task.issue='';save();renderProjectTasks(projId);renderProjectIssues(projId);renderAllIssues();toast('✅ تم حل المشكلة','success');}
+}
+
+// ════════════════════════════
+// ADD PHASE
+// ════════════════════════════
+function openAddPhase(projId) {
+  document.getElementById('phf-project-id').value=projId;
+  document.getElementById('phf-name').value='';
+  const proj=state.projects.find(p=>p.id===projId);
+  document.getElementById('phf-order').value=(proj?.phases?.length||0)+1;
+  openModal('modal-phase');
+}
+
+function savePhase() {
+  const projId=document.getElementById('phf-project-id').value;
+  const name=document.getElementById('phf-name').value.trim();
+  const order=Number(document.getElementById('phf-order').value)||1;
+  if(!name){toast('اكتب اسم المرحلة','error');return;}
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj)return;
+  if(!proj.phases)proj.phases=[];
+  proj.phases.push({id:'ph'+Date.now(),name,order});
+  save();closeModal('modal-phase');renderProjectTasks(projId);toast('✅ تم إضافة المرحلة','success');
+}
+
+// ════════════════════════════
+// ADD TASK
+// ════════════════════════════
+function openAddTask(projId, phaseId) {
+  document.getElementById('tf-project-id').value=projId;
+  document.getElementById('tf-phase-id').value=phaseId;
+  ['tf-name','tf-contractor','tf-start','tf-due','tf-notes','tf-issue'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tf-status').value='pending';
+  clearSingle('tf-img','tf-img-preview','tf-img-clear');
+  openModal('modal-task');
+}
+
+function saveTask() {
+  const projId=document.getElementById('tf-project-id').value;
+  const phaseId=document.getElementById('tf-phase-id').value;
+  const name=document.getElementById('tf-name').value.trim();
+  if(!name){toast('اكتب اسم المهمة','error');return;}
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj)return;
+  if(!proj.tasks)proj.tasks=[];
+  const imgEl=document.getElementById('tf-img-preview');
+  const image=(imgEl&&imgEl.src&&imgEl.src!==window.location.href)?imgEl.src:null;
+  proj.tasks.push({
+    id:'t'+Date.now(), phaseId, name,
+    contractor:document.getElementById('tf-contractor').value.trim(),
+    start:document.getElementById('tf-start').value,
+    due:document.getElementById('tf-due').value,
+    status:document.getElementById('tf-status').value,
+    notes:document.getElementById('tf-notes').value.trim(),
+    issue:document.getElementById('tf-issue').value.trim(),
+    image
+  });
+  save();closeModal('modal-task');renderProjectTasks(projId);renderProjectIssues(projId);toast('✅ تم إضافة المهمة','success');
+}
+
+// ════════════════════════════
+// ADD PHOTO
+// ════════════════════════════
+function openAddPhoto(projId) {
+  document.getElementById('phof-project-id').value=projId;
+  document.getElementById('phof-desc').value='';
+  const proj=state.projects.find(p=>p.id===projId);
+  const sel=document.getElementById('phof-phase');
+  sel.innerHTML=(proj?.phases||[]).map(ph=>`<option value="${ph.id}">${ph.name}</option>`).join('');
+  clearSingle('phof-img','phof-preview','');
+  openModal('modal-photo');
+}
+
+function savePhoto() {
+  const projId=document.getElementById('phof-project-id').value;
+  const imgEl=document.getElementById('phof-preview');
+  const image=imgEl?.src&&imgEl.src!==window.location.href?imgEl.src:null;
+  if(!image){toast('اختار صورة أولاً','error');return;}
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj)return;
+  if(!proj.photos)proj.photos=[];
+  proj.photos.push({
+    id:'img'+Date.now(),
+    phaseId:document.getElementById('phof-phase').value,
+    desc:document.getElementById('phof-desc').value.trim(),
+    image, date:today()
+  });
+  save();closeModal('modal-photo');renderProjectPhotos(projId);renderHome();toast('✅ تم إضافة الصورة','success');
+}
+
+// ════════════════════════════
+// PROJECT CRUD
+// ════════════════════════════
+function saveProject() {
+  const name=document.getElementById('pf-name').value.trim();
+  if(!name){toast('اكتب اسم المشروع','error');return;}
+  state.projects.push({
+    id:'p'+Date.now(), name,
+    client:document.getElementById('pf-client').value.trim(),
+    deadline:document.getElementById('pf-deadline').value,
+    color:document.getElementById('pf-color').value,
+    notes:document.getElementById('pf-notes').value.trim(),
+    phases:[], tasks:[], photos:[], visits:[]
+  });
+  save();closeModal('modal-project');renderSettings();toast('✅ تم إضافة المشروع','success');
+}
+
+function deleteProject(id) {
+  if(!confirm('حذف المشروع بكل بياناته؟'))return;
+  state.projects=state.projects.filter(p=>p.id!==id);
+  save();renderSettings();toast('تم الحذف');
+}
+
+// ════════════════════════════
+// SETTINGS
+// ════════════════════════════
+function renderSettings() {
+  document.getElementById('sett-projects').innerHTML=state.projects.map(p=>`
+    <div class="sett-item">
+      <div>
+        <div class="sett-label"><span style="color:${p.color}">●</span> ${p.name}</div>
+        <div class="sett-sub">${p.tasks?.length||0} مهمة · ${p.phases?.length||0} مرحلة</div>
+      </div>
+      <button class="del-btn" onclick="deleteProject('${p.id}')">✕</button>
+    </div>`).join('')||'<div class="sett-item"><div class="sett-sub">لا توجد مشاريع</div></div>';
+}
+
+// ════════════════════════════
+// MODALS
+// ════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ════════════════════════════
+// IMAGE
+// ════════════════════════════
+function previewSingle(inputId,previewId) {
+  const file=document.getElementById(inputId)?.files?.[0];
+  if(!file)return;
+  if(file.size>4*1024*1024){toast('الصورة أكبر من 4MB','error');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const p=document.getElementById(previewId);
+    if(p){p.src=e.target.result;p.style.display='block';}
+    const c=document.getElementById(inputId.replace('img','img-clear'));
+    if(c)c.style.display='inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+function clearSingle(inputId,previewId,clearId) {
+  const i=document.getElementById(inputId);if(i)i.value='';
+  const p=document.getElementById(previewId);if(p){p.src='';p.style.display='none';}
+  const c=document.getElementById(clearId);if(c)c.style.display='none';
+}
+function viewImg(src){if(!src)return;document.getElementById('img-modal-src').src=src;document.getElementById('img-modal').classList.add('open');}
+
+// ════════════════════════════
+// DATA
+// ════════════════════════════
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='مواقع_المشاريع.json';a.click();
+}
+function importJSON(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{state=JSON.parse(ev.target.result);save();goto('home');toast('✅ تم الاستيراد','success');}catch{toast('ملف غير صحيح','error');}};
+  r.readAsText(file);
+}
+function clearAll(){state=defaultState();save();goto('home');toast('تم المسح');}
+
+// ════════════════════════════
+// TOAST + HELPERS
+// ════════════════════════════
+function toast(msg,type=''){
+  const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;
+  document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+function today(){return new Date().toISOString().slice(0,10);}
+function fmtDate(d){if(!d)return'—';const p=d.split('-');return`${p[2]}/${p[1]}/${p[0]}`;}
+
+// ════════════════════════════
+// GOOGLE DRIVE
+// ════════════════════════════
+const GDRIVE_CLIENT_ID='462579374926-rdlljema5j4alherd72j1a6cll0tboba.apps.googleusercontent.com';
+const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
+const GDRIVE_FILE='maktab_sites_backup.json';
+let gToken=null;
+
+function gStatus(msg,c='var(--text3)'){const el=document.getElementById('gdrive-status');if(el){el.textContent=msg;el.style.color=c;}}
+function gSignIn(){
+  return new Promise((res,rej)=>{
+    if(gToken){res(gToken);return;}
+    if(!window.google?.accounts?.oauth2){
+      const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
+      s.onload=()=>doGSignIn(res,rej);s.onerror=()=>rej(new Error('فشل تحميل Google'));
+      document.head.appendChild(s);
+    }else doGSignIn(res,rej);
+  });
+}
+function doGSignIn(res,rej){
+  google.accounts.oauth2.initTokenClient({client_id:GDRIVE_CLIENT_ID,scope:GDRIVE_SCOPE,callback:(r)=>{
+    if(r.error){rej(new Error(r.error));return;}gToken=r.access_token;res(gToken);
+  }}).requestAccessToken();
+}
+async function gGetFile(){
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${GDRIVE_FILE}'&fields=files(id,modifiedTime)`,{headers:{Authorization:'Bearer '+gToken}});
+  return (await r.json()).files?.[0]||null;
+}
+async function gdriveSave(){
+  gStatus('جارٍ الحفظ...','var(--yellow)');
+  try{
+    await gSignIn();
+    const content=JSON.stringify(state,null,2);
+    const ex=await gGetFile();
+    let url=ex?`https://www.googleapis.com/upload/drive/v3/files/${ex.id}?uploadType=media`:(()=>{throw 'new';})();
+    if(!ex){
+      const m=await(await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:'Bearer '+gToken,'Content-Type':'application/json'},body:JSON.stringify({name:GDRIVE_FILE,parents:['appDataFolder']})})).json();
+      url=`https://www.googleapis.com/upload/drive/v3/files/${m.id}?uploadType=media`;
+    }
+    const up=await fetch(url,{method:'PATCH',headers:{Authorization:'Bearer '+gToken,'Content-Type':'application/json'},body:content});
+    if(up.ok){gStatus('✅ تم '+new Date().toLocaleTimeString('ar-EG'),'var(--green)');toast('✅ تم الحفظ على Drive','success');}
+    else throw new Error('فشل الرفع');
+  }catch(e){gStatus('❌ '+(e.message||e),'var(--red)');toast('خطأ: '+(e.message||e),'error');}
+}
+async function gdriveLoad(){
+  gStatus('جارٍ التحميل...','var(--yellow)');
+  try{
+    await gSignIn();
+    const f=await gGetFile();
+    if(!f){gStatus('لا توجد نسخة','var(--red)');toast('لا توجد نسخة محفوظة','error');return;}
+    if(!confirm('هيستبدل البيانات الحالية. متأكد؟')){gStatus('');return;}
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`,{headers:{Authorization:'Bearer '+gToken}});
+    state=await r.json();save();goto('home');
+    gStatus('✅ تم '+new Date().toLocaleTimeString('ar-EG'),'var(--green)');toast('✅ تم الاستيراد','success');
+  }catch(e){gStatus('❌ '+(e.message||e),'var(--red)');toast('خطأ: '+(e.message||e),'error');}
+}
+
+// ════════════════════════════
+// PWA
+// ════════════════════════════
+const ICON=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="80" fill="#161b22"/><text x="256" y="340" font-size="260" text-anchor="middle" fill="white">🏗</text></svg>`;
+const ICON_URL='data:image/svg+xml,'+encodeURIComponent(ICON);
+const mf={name:'متابعة المواقع',short_name:'المواقع',start_url:'./',display:'standalone',background_color:'#0d1117',theme_color:'#111827',lang:'ar',dir:'rtl',icons:[{src:ICON_URL,sizes:'512x512',type:'image/svg+xml',purpose:'any maskable'}]};
+const mb=new Blob([JSON.stringify(mf)],{type:'application/manifest+json'});
+document.getElementById('pwa-manifest').href=URL.createObjectURL(mb);
+document.getElementById('pwa-icon').href=ICON_URL;
+
+const SW=`const C='sites-v1';self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(c=>{if(c)return c;return fetch(e.request).then(r=>{if(!r||r.status!==200)return r;const cl=r.clone();caches.open(C).then(ca=>ca.put(e.request,cl));return r;}).catch(()=>c);}));});`;
+if('serviceWorker' in navigator){const sb=new Blob([SW],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(sb),{scope:'./'}).catch(e=>console.log(e));}
+let dp=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;setTimeout(()=>document.getElementById('pwa-banner').classList.add('show'),4000);});
+function installPWA(){
+  if(!dp){toast('iPhone: زر المشاركة ← Add to Home Screen');document.getElementById('pwa-banner').classList.remove('show');return;}
+  dp.prompt();dp.userChoice.then(r=>{if(r.outcome==='accepted')toast('✅ تم التثبيت!','success');dp=null;document.getElementById('pwa-banner').classList.remove('show');});
+}
+
+// ════════════════════════════
+// INIT
+// ════════════════════════════
+goto('home');
+</script>
+</body>
+</html>
