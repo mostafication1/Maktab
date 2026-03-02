@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>سجل المصاريف — مكتب الإشراف</title>
+<meta name="application-name" content="مكتب الإشراف">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مكتب الإشراف">
+<meta name="theme-color" content="#1F3864">
+<meta name="description" content="نظام متابعة مصاريف المشاريع الهندسية">
+<link rel="manifest" id="pwa-manifest">
+<link rel="apple-touch-icon" id="pwa-icon">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --ink:       #0f1923;
+  --ink-soft:  #2c3e50;
+  --ink-muted: #7f8c8d;
+  --paper:     #f7f6f2;
+  --paper-2:   #edecea;
+  --line:      #ddd9d4;
+  --accent:    #c8622a;
+  --accent-2:  #2980b9;
+  --accent-3:  #27ae60;
+  --warn:      #e74c3c;
+  --gold:      #d4a017;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.14);
+  --r:         10px;
+  --r-lg:      16px;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── LAYOUT ── */
+.shell { display:flex; min-height:100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 230px;
+  min-width: 230px;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top:0; right:0; bottom:0;
+  z-index: 100;
+  transition: transform .3s;
+}
+.sidebar-logo {
+  padding: 28px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-logo .brand {
+  font-family: 'Tajawal', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  color: #fff;
+  line-height: 1.2;
+}
+.sidebar-logo .brand span { color: var(--accent); }
+.sidebar-logo .sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  margin-top: 4px;
+}
+.nav { flex:1; padding: 16px 0; overflow-y:auto; }
+.nav-section { padding: 6px 20px 4px; font-size:10px; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.08em; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  font-size: 13.5px;
+  transition: all .2s;
+  border-right: 3px solid transparent;
+}
+.nav-item:hover { color:#fff; background: rgba(255,255,255,.05); }
+.nav-item.active { color:#fff; background: rgba(200,98,42,.15); border-right-color: var(--accent); }
+.nav-item .icon { font-size:16px; width:20px; text-align:center; }
+.nav-badge {
+  margin-right: auto;
+  background: var(--accent);
+  color:#fff;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-weight:700;
+}
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: 11px;
+  color: rgba(255,255,255,.25);
+}
+
+/* MAIN */
+.main { margin-right: 230px; flex:1; display:flex; flex-direction:column; min-height:100vh; }
+
+/* TOP BAR */
+.topbar {
+  background:#fff;
+  border-bottom: 1px solid var(--line);
+  padding: 0 28px;
+  height: 62px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position: sticky;
+  top:0;
+  z-index:50;
+  box-shadow: var(--shadow-sm);
+}
+.topbar-title {
+  font-family: 'Tajawal', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--ink);
+}
+.topbar-actions { display:flex; gap:10px; align-items:center; }
+
+/* PAGES */
+.page { display:none; padding: 28px; flex:1; }
+.page.active { display:block; }
+
+/* CARDS */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:28px; }
+.kpi-card {
+  background:#fff;
+  border-radius: var(--r);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--line);
+  position:relative;
+  overflow:hidden;
+  transition: box-shadow .2s;
+}
+.kpi-card:hover { box-shadow: var(--shadow-md); }
+.kpi-card::before {
+  content:'';
+  position:absolute;
+  top:0; right:0;
+  width:4px;
+  height:100%;
+  background: var(--kpi-color, var(--accent));
+}
+.kpi-label { font-size:11px; color:var(--ink-muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+.kpi-value { font-family:'Tajawal',sans-serif; font-size:24px; font-weight:800; margin-top:6px; color:var(--ink); }
+.kpi-sub { font-size:11px; color:var(--ink-muted); margin-top:3px; }
+
+/* PANELS */
+.panel {
+  background:#fff;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+  overflow:hidden;
+}
+.panel-head {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background: #fafaf9;
+}
+.panel-title { font-weight:700; font-size:14px; color:var(--ink); display:flex; align-items:center; gap:8px; }
+.panel-body { padding: 22px; }
+
+/* TABLE */
+.tbl { width:100%; border-collapse:collapse; }
+.tbl th {
+  background: var(--paper);
+  padding: 10px 14px;
+  text-align: right;
+  font-size:11px;
+  font-weight:700;
+  color: var(--ink-muted);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  border-bottom: 2px solid var(--line);
+}
+.tbl td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--paper-2);
+  font-size:13px;
+  vertical-align:middle;
+}
+.tbl tr:last-child td { border-bottom:none; }
+.tbl tr:hover td { background: #fafaf9; }
+.tbl .amount { font-family:'Tajawal',sans-serif; font-weight:700; color:var(--ink); }
+.tbl .muted { color:var(--ink-muted); font-size:12px; }
+
+/* TAGS */
+.tag {
+  display:inline-block;
+  padding: 3px 10px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:600;
+}
+.tag-green  { background:#e8f8f0; color:#1e8449; }
+.tag-blue   { background:#e8f4fd; color:#1a6fa0; }
+.tag-orange { background:#fef5ec; color:#ca6f1e; }
+.tag-red    { background:#fdecea; color:#c0392b; }
+.tag-gray   { background:#f0f0f0; color:#666; }
+.tag-purple { background:#f0eaf8; color:#6c3483; }
+
+/* FORM */
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-group.full { grid-column: 1/-1; }
+.form-label { font-size:12px; font-weight:700; color:var(--ink-soft); }
+.form-input, .form-select, .form-textarea {
+  padding: 10px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+  font-family: 'Cairo', sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: #fff;
+  transition: border-color .2s, box-shadow .2s;
+  width:100%;
+  direction:rtl;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline:none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,98,42,.1);
+}
+.form-textarea { resize:vertical; min-height:70px; }
+
+/* BUTTONS */
+.btn {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding: 9px 18px;
+  border-radius: var(--r);
+  font-family:'Cairo',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  border:none;
+  transition: all .2s;
+}
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:#b5561f; box-shadow: var(--shadow-md); }
+.btn-secondary { background:var(--paper-2); color:var(--ink-soft); border:1px solid var(--line); }
+.btn-secondary:hover { background:var(--line); }
+.btn-success { background:var(--accent-3); color:#fff; }
+.btn-success:hover { background:#1e8449; }
+.btn-sm { padding:6px 12px; font-size:12px; }
+.btn-danger { background:var(--warn); color:#fff; }
+.btn-danger:hover { background:#c0392b; }
+.btn-ghost { background:transparent; color:var(--ink-muted); border:1px solid var(--line); }
+.btn-ghost:hover { color:var(--ink); border-color:var(--ink-soft); }
+
+/* PROJECT CARDS */
+.proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.proj-card {
+  background:#fff;
+  border-radius:var(--r-lg);
+  border:1px solid var(--line);
+  padding:20px;
+  cursor:pointer;
+  transition: all .2s;
+  box-shadow: var(--shadow-sm);
+}
+.proj-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
+.proj-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.proj-name { font-weight:800; font-size:15px; color:var(--ink); }
+.proj-client { font-size:12px; color:var(--ink-muted); margin-top:2px; }
+.proj-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.proj-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+.proj-stat-label { font-size:10px; color:var(--ink-muted); font-weight:600; text-transform:uppercase; }
+.proj-stat-val { font-family:'Tajawal',sans-serif; font-weight:700; font-size:15px; margin-top:2px; }
+.progress-bar { height:6px; background:var(--paper-2); border-radius:3px; overflow:hidden; margin-top:12px; }
+.progress-fill { height:100%; border-radius:3px; transition:width .5s; }
+
+/* BAND BREAKDOWN */
+.band-row { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--paper-2); }
+.band-row:last-child { border-bottom:none; }
+.band-name { width:130px; font-size:13px; font-weight:600; flex-shrink:0; }
+.band-bar-wrap { flex:1; height:8px; background:var(--paper-2); border-radius:4px; overflow:hidden; }
+.band-bar { height:100%; border-radius:4px; }
+.band-amt { width:90px; text-align:left; font-family:'Tajawal',sans-serif; font-size:13px; font-weight:700; flex-shrink:0; }
+.band-pct { width:40px; text-align:left; font-size:11px; color:var(--ink-muted); flex-shrink:0; }
+
+/* MODAL */
+.modal-overlay {
+  display:none;
+  position:fixed; inset:0;
+  background:rgba(15,25,35,.55);
+  z-index:200;
+  align-items:center;
+  justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:#fff;
+  border-radius:var(--r-lg);
+  width:min(560px,95vw);
+  max-height:90vh;
+  overflow-y:auto;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+.modal-head {
+  padding:20px 24px 16px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.modal-title { font-weight:800; font-size:16px; }
+.modal-close { background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-muted);padding:4px; }
+.modal-body { padding:22px 24px; }
+.modal-foot { padding:14px 24px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px; }
+
+/* TOAST */
+.toast-wrap { position:fixed; bottom:24px; left:24px; z-index:999; display:flex; flex-direction:column; gap:8px; }
+.toast {
+  background:var(--ink);
+  color:#fff;
+  padding:12px 18px;
+  border-radius:var(--r);
+  font-size:13px;
+  box-shadow:var(--shadow-lg);
+  animation: fadeIn .3s ease;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.toast.success { background:var(--accent-3); }
+.toast.error   { background:var(--warn); }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* SEARCH */
+.search-row { display:flex; gap:10px; margin-bottom:16px; align-items:center; flex-wrap:wrap; }
+.search-input {
+  padding:8px 14px;
+  border:1.5px solid var(--line);
+  border-radius:var(--r);
+  font-family:'Cairo',sans-serif;
+  font-size:13px;
+  width:220px;
+  direction:rtl;
+}
+.search-input:focus { outline:none; border-color:var(--accent); }
+
+/* EMPTY STATE */
+.empty { text-align:center; padding:50px 20px; color:var(--ink-muted); }
+.empty .icon { font-size:48px; margin-bottom:12px; }
+.empty p { font-size:14px; }
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar { transform:translateX(100%); }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-right:0; }
+  .kpi-grid { grid-template-columns:1fr 1fr; }
+  .page { padding:16px; }
+}
+
+/* CONTRACTOR CARD */
+.contractor-card {
+  border-bottom: 1px solid var(--line);
+  transition: background .15s;
+}
+.contractor-card:last-child { border-bottom: none; }
+.contractor-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 14px 20px; cursor:pointer; gap:12px;
+}
+.contractor-header:hover { background: var(--paper); }
+.contractor-name { font-weight:800; font-size:14px; }
+.contractor-sub  { font-size:11px; color:var(--ink-muted); margin-top:2px; }
+.contractor-totals { display:flex; gap:20px; align-items:center; }
+.c-total-item { text-align:center; }
+.c-total-label { font-size:10px; color:var(--ink-muted); font-weight:600; text-transform:uppercase; }
+.c-total-val   { font-family:'Tajawal',sans-serif; font-weight:800; font-size:15px; margin-top:2px; }
+.contractor-detail { display:none; padding:0 20px 20px; }
+.contractor-detail.open { display:block; }
+
+/* TABS */
+.tabs { display:flex; gap:2px; border-bottom:2px solid var(--line); margin-bottom:16px; }
+.tab  { padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; color:var(--ink-muted); border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.tab-pane { display:none; } .tab-pane.active { display:block; }
+
+/* INFO GRID */
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.info-item { background:var(--paper); border-radius:8px; padding:10px 14px; }
+.info-label { font-size:10px; color:var(--ink-muted); font-weight:700; text-transform:uppercase; }
+.info-val   { font-size:13px; font-weight:700; margin-top:3px; }
+
+/* BALANCE BAR */
+.balance-bar { background:var(--paper); border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+.balance-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:13px; }
+.balance-row:last-child { border-bottom:none; font-weight:800; font-size:14px; }
+.balance-label { color:var(--ink-soft); }
+.balance-val   { font-family:'Tajawal',sans-serif; font-weight:700; }
+
+/* PROJECT BREAKDOWN */
+.proj-breakdown { margin-bottom:14px; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.proj-breakdown-head { background:var(--paper); padding:9px 14px; display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; }
+.contract-row { display:grid; grid-template-columns:1fr 80px 80px 80px 80px 34px; gap:6px; padding:8px 12px; align-items:center; font-size:12px; }
+.contract-row.head { background:var(--ink); color:#fff; font-weight:700; font-size:11px; }
+.contract-row:not(.head):nth-child(even) { background:#fafaf9; }
+
+/* APPOINTMENT */
+.appt-item { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); margin-bottom:8px; }
+.appt-item.done { opacity:.55; }
+.appt-date  { font-family:'Tajawal',sans-serif; font-weight:800; font-size:13px; color:var(--accent-2); min-width:80px; }
+.appt-proj  { font-size:10px; color:var(--ink-muted); margin-top:2px; }
+.appt-desc  { flex:1; font-size:13px; }
+.appt-actions { display:flex; gap:6px; flex-shrink:0; }
+.appt-overdue { border-color:#fca5a5; background:#fff5f5; }
+.appt-soon    { border-color:#fcd34d; background:#fffbeb; }
+
+/* UPCOMING STRIP on home */
+.upcoming-item { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--paper-2); align-items:flex-start; font-size:12px; }
+.upcoming-item:last-child { border-bottom:none; }
+
+/* IMG VIEWER */
+.img-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:999; align-items:center; justify-content:center; cursor:zoom-out; }
+.img-modal.open { display:flex; }
+.img-modal img { max-width:90vw; max-height:90vh; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+.img-modal-close { position:absolute; top:20px; left:20px; background:#fff; border:none; border-radius:50%; width:36px; height:36px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.receipt-thumb { width:32px; height:32px; object-fit:cover; border-radius:4px; cursor:pointer; border:1px solid var(--line); vertical-align:middle; }
+.receipt-thumb:hover { transform:scale(1.1); }
+
+/* s-paid etc */
+.s-paid { color:#1e8449; font-weight:700; }
+.s-pend { color:#c0392b; font-weight:700; }
+.s-part { color:#ca6f1e; font-weight:700; }
+.c1 { color:#c8622a; } .c2 { color:#2980b9; } .c3 { color:#27ae60; }
+.c4 { color:#8e44ad; } .c5 { color:#e67e22; } .c6 { color:#16a085; }
+
+.section-sep { height:1px; background:var(--line); margin:24px 0; }
+
+/* FILTER BAR */
+.filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.filter-chip {
+  padding:5px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  border:1.5px solid var(--line);
+  background:#fff;
+  color:var(--ink-soft);
+  transition:all .15s;
+}
+.filter-chip.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+.dot { width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px; }
+
+/* PWA INSTALL BANNER */
+.pwa-banner {
+  display:none;
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--ink);
+  color:#fff;
+  padding:12px 20px;
+  border-radius:12px;
+  box-shadow:var(--shadow-lg);
+  z-index:500;
+  align-items:center;
+  gap:12px;
+  font-size:13px;
+  white-space:nowrap;
+  animation: slideUp .3s ease;
+}
+.pwa-banner.show { display:flex; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">مكتب <span>الإشراف</span></div>
+    <div class="sub">نظام متابعة المصاريف</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">الرئيسية</div>
+    <div class="nav-item active" onclick="goto('home')">
+      <span class="icon">🏠</span> الداشبورد الرئيسي
+    </div>
+    <div class="nav-item" onclick="goto('add')">
+      <span class="icon">➕</span> تسجيل مصروف
+    </div>
+
+    <div class="nav-section" style="margin-top:12px">المشاريع</div>
+    <div id="nav-projects"></div>
+
+    <div class="nav-section" style="margin-top:12px">الإدارة</div>
+    <div class="nav-item" onclick="goto('all')">
+      <span class="icon">📋</span> كل المصاريف
+    </div>
+    <div class="nav-item" onclick="goto('contractors')">
+      <span class="icon">👷</span> المقاولون
+    </div>
+    <div class="nav-item" onclick="goto('settings')">
+      <span class="icon">⚙️</span> الإعدادات
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div>البيانات محفوظة محلياً</div>
+    <div id="gdrive-footer" style="margin-top:4px;display:none;color:#4285f4;font-size:10px">☁️ متصل بـ Google Drive</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">الداشبورد الرئيسي</span>
+    <div class="topbar-actions">
+      <div id="topbar-export-btns" style="display:none;gap:8px;align-items:center"></div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-expense')">➕ مصروف جديد</button>
+    </div>
+  </div>
+
+  <!-- PAGE: HOME -->
+  <div class="page active" id="page-home">
+    <div class="kpi-grid" id="kpi-home"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="home-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">📁 المشاريع</span>
+          <button class="btn btn-secondary btn-sm" onclick="goto('settings')">إدارة</button>
+        </div>
+        <div class="panel-body" id="home-projects-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">🕐 آخر المصاريف</span>
+          <button class="btn btn-secondary btn-sm" onclick="goto('all')">الكل</button>
+        </div>
+        <div class="panel-body" style="padding:0">
+          <table class="tbl" id="home-recent"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">📊 توزيع المصاريف حسب البند</span></div>
+      <div class="panel-body" id="home-bands"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: ADD EXPENSE -->
+  <div class="page" id="page-add">
+    <div class="panel" style="max-width:680px;margin:auto">
+      <div class="panel-head">
+        <span class="panel-title">➕ تسجيل مصروف جديد</span>
+      </div>
+      <div class="panel-body">
+        <div class="form-grid" id="add-form-inner">
+          <div class="form-group">
+            <label class="form-label">المشروع *</label>
+            <select class="form-select" id="f-project"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">البند *</label>
+            <select class="form-select" id="f-band"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">المبلغ (جنيه) *</label>
+            <input type="number" class="form-input" id="f-amount" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">التاريخ *</label>
+            <input type="date" class="form-input" id="f-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">الطرف / المورد</label>
+            <input type="text" class="form-input" id="f-party" placeholder="اسم الشخص أو الشركة">
+          </div>
+          <div class="form-group">
+            <label class="form-label">الحالة</label>
+            <select class="form-select" id="f-status">
+              <option value="تم الدفع">✅ تم الدفع</option>
+              <option value="معلق">⏳ معلق</option>
+              <option value="جزئي">🔸 جزئي</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">الوصف التفصيلي *</label>
+            <textarea class="form-textarea" id="f-desc" placeholder="اكتب تفاصيل المصروف..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">ملاحظات إضافية</label>
+            <input type="text" class="form-input" id="f-notes" placeholder="أي ملاحظات...">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">📎 صورة الفاتورة (اختياري)</label>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+                📷 اختر صورة
+                <input type="file" id="f-img" accept="image/*" style="display:none" onchange="previewImg('f-img','f-img-preview')">
+              </label>
+              <span id="f-img-name" style="font-size:11px;color:var(--ink-muted)"></span>
+              <img id="f-img-preview" src="" style="display:none;max-height:60px;border-radius:6px;border:1px solid var(--line);cursor:pointer" onclick="viewImg(this.src)">
+              <button class="btn btn-ghost btn-sm" id="f-img-clear" style="display:none;color:var(--warn)" onclick="clearImg('f-img','f-img-preview','f-img-name','f-img-clear')">✕ حذف</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="saveExpense()">💾 حفظ المصروف</button>
+          <button class="btn btn-secondary" onclick="clearForm()">🗑️ مسح</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: ALL EXPENSES -->
+  <div class="page" id="page-all">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">📋 كل المصاريف</span>
+        <span id="all-count" class="tag tag-gray"></span>
+      </div>
+      <div class="panel-body">
+        <div class="search-row">
+          <input class="search-input" id="search-all" placeholder="🔍 ابحث..." oninput="renderAll()">
+          <select class="form-select" style="width:160px" id="filter-proj-all" onchange="renderAll()">
+            <option value="">كل المشاريع</option>
+          </select>
+          <select class="form-select" style="width:140px" id="filter-band-all" onchange="renderAll()">
+            <option value="">كل البنود</option>
+          </select>
+          <select class="form-select" style="width:130px" id="filter-status-all" onchange="renderAll()">
+            <option value="">كل الحالات</option>
+            <option>تم الدفع</option>
+            <option>معلق</option>
+            <option>جزئي</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>التاريخ</th><th>المشروع</th><th>البند</th>
+                <th>الوصف</th><th>الطرف</th><th>المبلغ</th><th>الحالة</th><th>فاتورة</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="all-tbody"></tbody>
+          </table>
+        </div>
+        <div id="all-total-row" style="padding:12px 14px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:15px;border-top:2px solid var(--line);text-align:left"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: PROJECT -->
+  <div class="page" id="page-project">
+    <div id="proj-detail"></div>
+  </div>
+
+  <!-- PAGE: CONTRACTORS -->
+  <div class="page" id="page-contractors">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">👷 المقاولون والموردون</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="contractors-count" class="tag tag-gray"></span>
+          <button class="btn btn-success btn-sm" onclick="openAddContractor()">+ مقاول جديد</button>
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0" id="contractors-body"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: SETTINGS -->
+  <div class="page" id="page-settings">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
+
+      <!-- Projects -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">📁 المشاريع</span>
+          <button class="btn btn-success btn-sm" onclick="openModal('modal-project')">+ مشروع</button>
+        </div>
+        <div class="panel-body" id="settings-projects" style="padding:0"></div>
+      </div>
+
+      <!-- Bands -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">🏷️ البنود</span>
+          <button class="btn btn-success btn-sm" onclick="openModal('modal-band')">+ بند</button>
+        </div>
+        <div class="panel-body" id="settings-bands" style="padding:0"></div>
+      </div>
+
+    </div>
+
+    <div class="panel" style="max-width:900px;margin-top:20px">
+      <div class="panel-head"><span class="panel-title">⚠️ منطقة الخطر</span></div>
+      <div class="panel-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-danger" onclick="if(confirm('هتمسح كل البيانات؟'))clearAll()">🗑️ مسح كل البيانات</button>
+        <div style="width:1px;height:28px;background:var(--line)"></div>
+        <button class="btn btn-secondary" onclick="exportData()">📤 تصدير JSON</button>
+        <label class="btn btn-secondary" style="cursor:pointer">📥 استيراد JSON<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+        <div style="width:1px;height:28px;background:var(--line)"></div>
+        <button class="btn btn-secondary" id="gdrive-save-btn" onclick="gdriveSave()" style="background:#fff;border-color:#4285f4;color:#4285f4">
+          <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"> حفظ على Drive
+        </button>
+        <button class="btn btn-secondary" id="gdrive-load-btn" onclick="gdriveLoad()" style="background:#fff;border-color:#34a853;color:#34a853">
+          <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"> استيراد من Drive
+        </button>
+        <span id="gdrive-status" style="font-size:11px;color:var(--ink-muted)"></span>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">➕ مصروف جديد</span>
+      <button class="modal-close" onclick="closeModal('modal-expense')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">المشروع *</label>
+          <select class="form-select" id="mf-project"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">البند *</label>
+          <select class="form-select" id="mf-band"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">المبلغ *</label>
+          <input type="number" class="form-input" id="mf-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">التاريخ *</label>
+          <input type="date" class="form-input" id="mf-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الطرف / المورد</label>
+          <input type="text" class="form-input" id="mf-party" placeholder="اسم الشخص أو الشركة">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الحالة</label>
+          <select class="form-select" id="mf-status">
+            <option value="تم الدفع">✅ تم الدفع</option>
+            <option value="معلق">⏳ معلق</option>
+            <option value="جزئي">🔸 جزئي</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">الوصف التفصيلي *</label>
+          <textarea class="form-textarea" id="mf-desc" placeholder="اكتب تفاصيل المصروف..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">ملاحظات</label>
+          <input type="text" class="form-input" id="mf-notes">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">📎 صورة الفاتورة (اختياري)</label>
+          <div id="mf-img-wrap" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+              📷 اختر صورة
+              <input type="file" id="mf-img" accept="image/*" style="display:none" onchange="previewImg('mf-img','mf-img-preview')">
+            </label>
+            <span id="mf-img-name" style="font-size:11px;color:var(--ink-muted)"></span>
+            <img id="mf-img-preview" src="" style="display:none;max-height:60px;border-radius:6px;border:1px solid var(--line);cursor:pointer" onclick="viewImg(this.src)">
+            <button class="btn btn-ghost btn-sm" id="mf-img-clear" style="display:none;color:var(--warn)" onclick="clearImg('mf-img','mf-img-preview','mf-img-name','mf-img-clear')">✕ حذف</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-expense')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveModalExpense()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-project">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">📁 مشروع جديد</span>
+      <button class="modal-close" onclick="closeModal('modal-project')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">اسم المشروع *</label>
+          <input type="text" class="form-input" id="pf-name" placeholder="مثال: فيلا أ. أحمد — المعادي">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">اسم العميل</label>
+          <input type="text" class="form-input" id="pf-client" placeholder="اسم العميل">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الميزانية الإجمالية (جنيه)</label>
+          <input type="number" class="form-input" id="pf-budget" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">لون المشروع</label>
+          <input type="color" class="form-input" id="pf-color" value="#c8622a" style="height:42px;padding:4px">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">ملاحظات</label>
+          <textarea class="form-textarea" id="pf-notes" placeholder="وصف المشروع أو ملاحظات..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-project')">إلغاء</button>
+      <button class="btn btn-success" onclick="saveProject()">✅ إضافة المشروع</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-band">
+  <div class="modal" style="width:360px">
+    <div class="modal-head">
+      <span class="modal-title">🏷️ بند جديد</span>
+      <button class="modal-close" onclick="closeModal('modal-band')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">اسم البند *</label>
+        <input type="text" class="form-input" id="bf-name" placeholder="مثال: سباكة">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-band')">إلغاء</button>
+      <button class="btn btn-success" onclick="saveBand()">✅ إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTRACTOR MODAL -->
+<div class="modal-overlay" id="modal-contractor">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">👷 مقاول / مورد جديد</span>
+      <button class="modal-close" onclick="closeModal('modal-contractor')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">الاسم *</label>
+          <input type="text" class="form-input" id="cf-name" placeholder="مثال: كهربائي أحمد">
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف</label>
+          <input type="tel" class="form-input" id="cf-phone" placeholder="01X-XXX-XXXX" dir="ltr">
+        </div>
+        <div class="form-group">
+          <label class="form-label">التخصص</label>
+          <select class="form-select" id="cf-specialty"></select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">ملاحظات</label>
+          <textarea class="form-textarea" id="cf-notes" placeholder="أي ملاحظات عن المقاول..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-contractor')">إلغاء</button>
+      <button class="btn btn-success" onclick="saveContractor()">✅ إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPOINTMENT MODAL -->
+<div class="modal-overlay" id="modal-appointment">
+  <div class="modal" style="width:440px">
+    <div class="modal-head">
+      <span class="modal-title">📅 موعد جديد</span>
+      <button class="modal-close" onclick="closeModal('modal-appointment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="af-contractor-id">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">المشروع</label>
+          <select class="form-select" id="af-project"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">التاريخ *</label>
+          <input type="date" class="form-input" id="af-date">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">وصف الموعد *</label>
+          <input type="text" class="form-input" id="af-desc" placeholder="مثال: معاينة لوحة الكهرباء">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-appointment')">إلغاء</button>
+      <button class="btn btn-success" onclick="saveAppointment()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE VIEWER -->
+<div class="img-modal" id="img-modal" onclick="document.getElementById('img-modal').classList.remove('open')">
+  <button class="img-modal-close" onclick="document.getElementById('img-modal').classList.remove('open')">✕</button>
+  <img id="img-modal-src" src="" alt="فاتورة">
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div class="pwa-banner" id="pwa-banner">
+  <span>📱 ثبّت التطبيق على موبايلك</span>
+  <button class="btn btn-primary btn-sm" onclick="installPWA()" id="pwa-install-btn">تثبيت</button>
+  <button class="btn btn-ghost btn-sm" style="color:#aaa;border-color:#444" onclick="document.getElementById('pwa-banner').classList.remove('show')">لاحقاً</button>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// STATE & STORAGE
+// ═══════════════════════════════════════════════════
+const STORAGE_KEY = 'maktab_expenses_v1';
+
+function defaultState() {
+  return {
+    projects: [
+      { id: 'p1', name: 'منزل أ. محمد شبل — المدخل والسلم', client: 'أ. محمد شبل', budget: 150000, color: '#c8622a', notes: '' },
+      { id: 'p2', name: 'فيلا أ. كريم — المعادي', client: 'أ. كريم', budget: 300000, color: '#2980b9', notes: '' },
+    ],
+    bands: ['كهرباء','سباكة','نجارة','دهانات','بلاط وسيراميك','تكييف','جبس وديكور','نثريات','أخرى'],
+    contractors: [
+      { id:'c1', name:'نجار محمد',     phone:'0100-000-0001', specialty:'نجارة',  notes:'شغله ممتاز', agreed:{p1:4000},    appointments:[] },
+      { id:'c2', name:'كهربائي أحمد', phone:'0100-000-0002', specialty:'كهرباء', notes:'',            agreed:{p1:16600},   appointments:[{ id:'a1', projectId:'p1', date:'2026-03-10', desc:'معاينة لوحة الكهرباء الثانية', done:false }] },
+      { id:'c3', name:'شركة الكهرباء',phone:'0100-000-0003', specialty:'كهرباء', notes:'',            agreed:{p1:29089, p2:12000}, appointments:[] },
+      { id:'c4', name:'مورد عام',      phone:'',              specialty:'نثريات', notes:'',            agreed:{},           appointments:[] },
+      { id:'c5', name:'سباك حسين',    phone:'0100-000-0005', specialty:'سباكة',  notes:'',            agreed:{p2:8500},    appointments:[{ id:'a2', projectId:'p2', date:'2026-03-15', desc:'تركيب مواسير الطابق الثاني', done:false }] },
+    ],
+    expenses: [
+      { id:'e1', projectId:'p1', band:'نجارة',  amount:4000,  date:'2026-02-01', party:'نجار محمد',    status:'تم الدفع', desc:'عمل كالون البوابة',             notes:'' },
+      { id:'e2', projectId:'p1', band:'نثريات', amount:500,   date:'2026-02-03', party:'مورد عام',     status:'تم الدفع', desc:'شراء رمل وأسمنت',              notes:'' },
+      { id:'e3', projectId:'p1', band:'كهرباء', amount:18225, date:'2026-02-05', party:'شركة الكهرباء',status:'تم الدفع', desc:'إنتركم ولوحة الكهرباء',       notes:'' },
+      { id:'e4', projectId:'p1', band:'كهرباء', amount:6000,  date:'2026-02-05', party:'كهربائي أحمد',status:'تم الدفع', desc:'مصنعية كهربائي',              notes:'' },
+      { id:'e5', projectId:'p1', band:'كهرباء', amount:600,   date:'2026-02-08', party:'كهربائي أحمد',status:'تم الدفع', desc:'تعديل العدادات',              notes:'' },
+      { id:'e6', projectId:'p1', band:'كهرباء', amount:10864, date:'2026-02-10', party:'شركة الكهرباء',status:'تم الدفع', desc:'فاتورة شراء بضاعة كهرباء',    notes:'' },
+      { id:'e7', projectId:'p2', band:'سباكة',  amount:8500,  date:'2026-02-12', party:'سباك حسين',   status:'تم الدفع', desc:'تركيب مواسير الطابق الأول',   notes:'' },
+      { id:'e8', projectId:'p2', band:'كهرباء', amount:12000, date:'2026-02-14', party:'شركة الكهرباء',status:'معلق',    desc:'توصيل الكهرباء والإضاءة',     notes:'في انتظار الفاتورة' },
+    ]
+  };
+}
+
+let state = (() => {
+  try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : defaultState(); }
+  catch(e) { return defaultState(); }
+})();
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+let currentPage = 'home';
+let currentProjectId = null;
+
+const titles = { home:'الداشبورد الرئيسي', add:'تسجيل مصروف جديد', all:'كل المصاريف', settings:'الإعدادات', project:'', contractors:'المقاولون والموردون' };
+
+function goto(page, projId) {
+  currentPage = page;
+  currentProjectId = projId || null;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const pg = document.getElementById('page-' + page);
+  if (pg) pg.classList.add('active');
+
+  const t = projId ? (state.projects.find(p=>p.id===projId)?.name || '') : (titles[page] || '');
+  document.getElementById('topbar-title').textContent = t;
+
+  if (page === 'home')        renderHome();
+  if (page === 'add')         renderAddForm();
+  if (page === 'all')         renderAll();
+  if (page === 'settings')    renderSettings();
+  if (page === 'project')     renderProject(projId);
+  if (page === 'contractors') renderContractors();
+
+  renderNav();
+  updateTopbarExport();
+}
+
+function renderNav() {
+  const navProjects = document.getElementById('nav-projects');
+  navProjects.innerHTML = state.projects.map(p => {
+    const total = state.expenses.filter(e=>e.projectId===p.id).reduce((s,e)=>s+e.amount,0);
+    return `<div class="nav-item ${currentPage==='project'&&currentProjectId===p.id?'active':''}" onclick="goto('project','${p.id}')">
+      <span class="icon">●</span>
+      <span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════
+function renderHome() {
+  const total = state.expenses.reduce((s,e)=>s+e.amount,0);
+  const paid  = state.expenses.filter(e=>e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+  const pend  = state.expenses.filter(e=>e.status==='معلق').reduce((s,e)=>s+e.amount,0);
+  const budg  = state.projects.reduce((s,p)=>s+Number(p.budget||0),0);
+
+  const kpis = [
+    { label:'إجمالي المصاريف', value: fmt(total), sub: state.expenses.length+' بند', color:'#c8622a' },
+    { label:'تم الدفع', value: fmt(paid), sub: pct(paid,total), color:'#27ae60' },
+    { label:'معلق', value: fmt(pend), sub: pct(pend,total), color:'#e74c3c' },
+    { label:'الميزانية الكلية', value: fmt(budg), sub: pct(total,budg)+' مُنفَّذ', color:'#2980b9' },
+    { label:'عدد المشاريع', value: state.projects.length, sub:'مشروع نشط', color:'#8e44ad' },
+  ];
+
+  document.getElementById('kpi-home').innerHTML = kpis.map(k => `
+    <div class="kpi-card" style="--kpi-color:${k.color}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  // Projects list
+  document.getElementById('home-projects-list').innerHTML = state.projects.length ? state.projects.map(p => {
+    const tot = state.expenses.filter(e=>e.projectId===p.id).reduce((s,e)=>s+e.amount,0);
+    const b   = Number(p.budget||0);
+    const p_  = b ? Math.min(100, Math.round(tot/b*100)) : 0;
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--paper-2);cursor:pointer" onclick="goto('project','${p.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:13px">${p.name}</span>
+        <span style="font-family:'Tajawal',sans-serif;font-weight:700;color:${p.color}">${fmt(tot)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--ink-muted);margin:3px 0">${p.client||'—'}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${p_}%;background:${p.color}"></div></div>
+    </div>`;
+  }).join('') : '<div class="empty"><p>لا توجد مشاريع — أضف مشروعاً من الإعدادات</p></div>';
+
+  // Recent
+  const recent = [...state.expenses].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  document.getElementById('home-recent').innerHTML = `
+    <thead><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+    <tbody>${recent.map(e=>`<tr>
+      <td class="muted">${fmtDate(e.date)}</td>
+      <td>${e.band}</td>
+      <td class="amount">${fmt(e.amount)}</td>
+      <td>${statusTag(e.status)}</td>
+    </tr>`).join('')}</tbody>`;
+
+  // Bands breakdown
+  const bandTotals = {};
+  state.expenses.forEach(e=>{ bandTotals[e.band]=(bandTotals[e.band]||0)+e.amount; });
+  const sorted = Object.entries(bandTotals).sort((a,b)=>b[1]-a[1]);
+  const colors = ['#c8622a','#2980b9','#27ae60','#8e44ad','#e67e22','#16a085','#d4a017','#e74c3c','#95a5a6'];
+  document.getElementById('home-bands').innerHTML = sorted.length ? sorted.map(([band,amt],i)=>`
+    <div class="band-row">
+      <div class="band-name">${band}</div>
+      <div class="band-bar-wrap"><div class="band-bar" style="width:${pct(amt,total,'n')}%;background:${colors[i%colors.length]}"></div></div>
+      <div class="band-amt">${fmt(amt)}</div>
+      <div class="band-pct">${pct(amt,total)}</div>
+    </div>`).join('') : '<div class="empty"><p>لا توجد مصاريف بعد</p></div>';
+}
+
+// ═══════════════════════════════════════════════════
+// ADD FORM (full page)
+// ═══════════════════════════════════════════════════
+function renderAddForm() {
+  populateSelect('f-project', state.projects, 'id','name');
+  populateSelect('f-band', state.bands.map(b=>({id:b,name:b})), 'id','name');
+  document.getElementById('f-date').value = today();
+}
+
+// ═══════════════════════════════════════════════════
+// ALL EXPENSES
+// ═══════════════════════════════════════════════════
+function renderAll() {
+  const s   = document.getElementById('search-all')?.value.toLowerCase()||'';
+  const fp  = document.getElementById('filter-proj-all')?.value||'';
+  const fb  = document.getElementById('filter-band-all')?.value||'';
+  const fs  = document.getElementById('filter-status-all')?.value||'';
+
+  // populate filters
+  const fpa = document.getElementById('filter-proj-all');
+  const fba = document.getElementById('filter-band-all');
+  if(fpa && fpa.options.length <= 1) {
+    state.projects.forEach(p=>{ const o=new Option(p.name,p.id); fpa.add(o); });
+  }
+  if(fba && fba.options.length <= 1) {
+    state.bands.forEach(b=>{ const o=new Option(b,b); fba.add(o); });
+  }
+
+  let rows = [...state.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  if(s)  rows = rows.filter(e=>(e.desc+e.party+e.band+e.notes).toLowerCase().includes(s));
+  if(fp) rows = rows.filter(e=>e.projectId===fp);
+  if(fb) rows = rows.filter(e=>e.band===fb);
+  if(fs) rows = rows.filter(e=>e.status===fs);
+
+  document.getElementById('all-count').textContent = rows.length + ' سجل';
+
+  const tbody = document.getElementById('all-tbody');
+  tbody.innerHTML = rows.length ? rows.map(e=>{
+    const proj = state.projects.find(p=>p.id===e.projectId);
+    return `<tr>
+      <td class="muted">${fmtDate(e.date)}</td>
+      <td><span style="color:${proj?.color||'#666'};font-weight:700;font-size:12px">●</span> ${proj?.name||'—'}</td>
+      <td><span class="tag tag-gray">${e.band}</span></td>
+      <td>${e.desc} ${e.notes?`<span class="muted">· ${e.notes}</span>`:''}</td>
+      <td class="muted">${e.party||'—'}</td>
+      <td class="amount">${fmt(e.amount)}</td>
+      <td>${statusTag(e.status)}</td>
+      <td>${e.image?`<img src="${e.image}" class="receipt-thumb" onclick="viewImg('${e.image}')" title="عرض الفاتورة">`:'<span style="color:var(--ink-muted);font-size:18px">—</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="deleteExpense('${e.id}')">✕</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--ink-muted)">لا توجد نتائج</td></tr>';
+
+  const total = rows.reduce((s,e)=>s+e.amount,0);
+  document.getElementById('all-total-row').innerHTML = rows.length ? `الإجمالي: <span style="color:var(--accent)">${fmt(total)} جنيه</span>` : '';
+}
+
+function deleteExpense(id) {
+  if(!confirm('حذف هذا المصروف؟')) return;
+  state.expenses = state.expenses.filter(e=>e.id!==id);
+  save(); renderAll(); toast('تم الحذف');
+}
+
+// ═══════════════════════════════════════════════════
+// PROJECT DETAIL
+// ═══════════════════════════════════════════════════
+function renderProject(id) {
+  const proj = state.projects.find(p=>p.id===id);
+  if(!proj) { document.getElementById('proj-detail').innerHTML='<p>مشروع غير موجود</p>'; return; }
+
+  const exps = state.expenses.filter(e=>e.projectId===id);
+  const total= exps.reduce((s,e)=>s+e.amount,0);
+  const paid = exps.filter(e=>e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+  const pend = exps.filter(e=>e.status==='معلق').reduce((s,e)=>s+e.amount,0);
+  const budg = Number(proj.budget||0);
+  const rem  = budg - total;
+  const p_   = budg ? Math.min(100,Math.round(total/budg*100)) : 0;
+
+  const bandTotals = {};
+  exps.forEach(e=>{ bandTotals[e.band]=(bandTotals[e.band]||0)+e.amount; });
+  const bandsSorted = Object.entries(bandTotals).sort((a,b)=>b[1]-a[1]);
+  const colors = ['#c8622a','#2980b9','#27ae60','#8e44ad','#e67e22','#16a085','#d4a017','#e74c3c','#95a5a6'];
+
+  document.getElementById('proj-detail').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:20px;font-weight:800">${proj.name}</h2>
+        <div style="color:var(--ink-muted);margin-top:4px">العميل: ${proj.client||'—'}</div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-expense')">➕ مصروف جديد</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--kpi-color:${proj.color}">
+        <div class="kpi-label">إجمالي المصاريف</div>
+        <div class="kpi-value">${fmt(total)}</div>
+        <div class="kpi-sub">${exps.length} بند</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:#27ae60">
+        <div class="kpi-label">تم الدفع</div>
+        <div class="kpi-value">${fmt(paid)}</div>
+        <div class="kpi-sub">${pct(paid,total)}</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:#e74c3c">
+        <div class="kpi-label">معلق</div>
+        <div class="kpi-value">${fmt(pend)}</div>
+        <div class="kpi-sub">${pct(pend,total)}</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:#2980b9">
+        <div class="kpi-label">الميزانية المتبقية</div>
+        <div class="kpi-value" style="color:${rem>=0?'#27ae60':'#e74c3c'}">${fmt(Math.abs(rem))}</div>
+        <div class="kpi-sub">${rem>=0?'متبقي':'تجاوز الميزانية'} · ${p_}% مُنفَّذ</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">📊 حسب البند</span></div>
+        <div class="panel-body">
+          ${bandsSorted.length ? bandsSorted.map(([b,a],i)=>`
+            <div class="band-row">
+              <div class="band-name">${b}</div>
+              <div class="band-bar-wrap"><div class="band-bar" style="width:${pct(a,total,'n')}%;background:${colors[i%colors.length]}"></div></div>
+              <div class="band-amt">${fmt(a)}</div>
+              <div class="band-pct">${pct(a,total)}</div>
+            </div>`).join('') : '<div class="empty"><p>لا توجد مصاريف</p></div>'}
+          <div style="margin-top:14px">
+            <div style="font-size:11px;color:var(--ink-muted);margin-bottom:6px">تقدم الميزانية (${p_}%)</div>
+            <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p_}%;background:${p_>90?'#e74c3c':p_>70?'#e67e22':proj.color}"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">📋 المصاريف</span></div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>التاريخ</th><th>البند</th><th>الوصف</th><th>الطرف</th><th>المبلغ</th><th>الحالة</th><th>فاتورة</th><th></th></tr></thead>
+            <tbody>
+              ${[...exps].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<tr>
+                <td class="muted">${fmtDate(e.date)}</td>
+                <td><span class="tag tag-gray">${e.band}</span></td>
+                <td>${e.desc}${e.notes?`<br><span class="muted">${e.notes}</span>`:''}</td>
+                <td class="muted">${e.party||'—'}</td>
+                <td class="amount">${fmt(e.amount)}</td>
+                <td>${statusTag(e.status)}</td>
+                <td>${e.image?`<img src="${e.image}" class="receipt-thumb" onclick="viewImg('${e.image}')" title="عرض الفاتورة">`:'<span style="color:var(--ink-muted)">—</span>'}</td>
+                <td><button class="btn btn-ghost btn-sm" onclick="deleteExpense('${e.id}');goto('project','${id}')">✕</button></td>
+              </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">لا توجد مصاريف</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════
+function renderSettings() {
+  document.getElementById('settings-projects').innerHTML = state.projects.map(p=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--paper-2)">
+      <div>
+        <div style="font-weight:700;font-size:13px">
+          <span style="color:${p.color}">●</span> ${p.name}
+        </div>
+        <div style="font-size:11px;color:var(--ink-muted)">${p.client||''} · ميزانية: ${fmt(Number(p.budget||0))}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="deleteProject('${p.id}')">✕</button>
+    </div>`).join('') || '<div class="empty"><p>لا توجد مشاريع</p></div>';
+
+  document.getElementById('settings-bands').innerHTML = state.bands.map((b,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--paper-2)">
+      <span style="font-size:13px;font-weight:600">${b}</span>
+      <button class="btn btn-ghost btn-sm" onclick="deleteBand(${i})">✕</button>
+    </div>`).join('') || '<div class="empty"><p>لا توجد بنود</p></div>';
+}
+
+function saveProject() {
+  const name   = document.getElementById('pf-name').value.trim();
+  const client = document.getElementById('pf-client').value.trim();
+  const budget = parseFloat(document.getElementById('pf-budget').value)||0;
+  const color  = document.getElementById('pf-color').value;
+  const notes  = document.getElementById('pf-notes').value.trim();
+  if(!name) { toast('اكتب اسم المشروع','error'); return; }
+  state.projects.push({ id:'p'+Date.now(), name, client, budget, color, notes });
+  save(); closeModal('modal-project');
+  ['pf-name','pf-client','pf-budget','pf-notes'].forEach(id=>document.getElementById(id).value='');
+  renderSettings(); renderNav();
+  toast('✅ تم إضافة المشروع','success');
+}
+
+function deleteProject(id) {
+  if(!confirm('حذف المشروع وكل مصاريفه؟')) return;
+  state.projects = state.projects.filter(p=>p.id!==id);
+  state.expenses = state.expenses.filter(e=>e.projectId!==id);
+  save(); renderSettings(); renderNav(); toast('تم الحذف');
+}
+
+function saveBand() {
+  const name = document.getElementById('bf-name').value.trim();
+  if(!name) { toast('اكتب اسم البند','error'); return; }
+  if(state.bands.includes(name)) { toast('البند موجود بالفعل','error'); return; }
+  state.bands.push(name);
+  save(); closeModal('modal-band');
+  document.getElementById('bf-name').value='';
+  renderSettings(); toast('✅ تم إضافة البند','success');
+}
+
+function deleteBand(i) {
+  if(!confirm('حذف هذا البند؟')) return;
+  state.bands.splice(i,1);
+  save(); renderSettings(); toast('تم الحذف');
+}
+
+function clearAll() { state = defaultState(); save(); goto('home'); toast('تم مسح البيانات'); }
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='سجل_المصاريف.json'; a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => { try { state=JSON.parse(ev.target.result); save(); goto('home'); toast('✅ تم الاستيراد','success'); } catch(err) { toast('ملف غير صحيح','error'); } };
+  r.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════
+function openModal(id) {
+  if(id==='modal-expense') {
+    populateSelect('mf-project', state.projects, 'id','name');
+    populateSelect('mf-band', state.bands.map(b=>({id:b,name:b})), 'id','name');
+    document.getElementById('mf-date').value = today();
+    if(currentProjectId) document.getElementById('mf-project').value = currentProjectId;
+  }
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════════════
+// IMAGE HANDLING
+// ═══════════════════════════════════════════════════
+function previewImg(inputId, previewId) {
+  const file = document.getElementById(inputId).files[0];
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { toast('الصورة أكبر من 4MB — اختار صورة أصغر', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById(previewId);
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    const nameEl = document.getElementById(inputId.replace('img','img-name'));
+    if (nameEl) nameEl.textContent = file.name;
+    const clearBtn = document.getElementById(inputId.replace('img','img-clear'));
+    if (clearBtn) clearBtn.style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImg(inputId, previewId, nameId, clearId) {
+  document.getElementById(inputId).value = '';
+  const p = document.getElementById(previewId);
+  p.src = ''; p.style.display = 'none';
+  document.getElementById(nameId).textContent = '';
+  document.getElementById(clearId).style.display = 'none';
+}
+
+function viewImg(src) {
+  if (!src) return;
+  document.getElementById('img-modal-src').src = src;
+  document.getElementById('img-modal').classList.add('open');
+}
+
+function getImgData(prefix) {
+  const preview = document.getElementById(`${prefix}-img-preview`);
+  return (preview && preview.src && preview.src !== window.location.href) ? preview.src : null;
+}
+
+// patch saveExpense to capture image
+const _origSaveExpense = saveExpense;
+function saveExpense(fromModal) {
+  const prefix = fromModal ? 'mf' : 'f';
+  const projectId = document.getElementById(`${prefix}-project`).value;
+  const band      = document.getElementById(`${prefix}-band`).value;
+  const amount    = parseFloat(document.getElementById(`${prefix}-amount`).value);
+  const date      = document.getElementById(`${prefix}-date`).value;
+  const party     = document.getElementById(`${prefix}-party`).value.trim();
+  const status    = document.getElementById(`${prefix}-status`).value;
+  const desc      = document.getElementById(`${prefix}-desc`).value.trim();
+  const notes     = document.getElementById(`${prefix}-notes`).value.trim();
+  const image     = getImgData(prefix);
+
+  if (!projectId || !band || !amount || !date || !desc) { toast('يرجى ملء الحقول المطلوبة *','error'); return; }
+
+  state.expenses.push({ id:'e'+Date.now(), projectId, band, amount, date, party, status, desc, notes, image });
+  save();
+  toast('✅ تم حفظ المصروف بنجاح','success');
+
+  if (fromModal) { closeModal('modal-expense'); clearModalForm(); }
+  else clearForm();
+  renderNav();
+}
+
+function saveModalExpense() { saveExpense(true); }
+
+function clearModalForm() {
+  ['mf-project','mf-band','mf-amount','mf-party','mf-desc','mf-notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('mf-date').value = today();
+  clearImg('mf-img','mf-img-preview','mf-img-name','mf-img-clear');
+}
+
+// ═══════════════════════════════════════════════════
+// CONTRACTORS PAGE
+// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// CONTRACTORS PAGE — FULL
+// ═══════════════════════════════════════════════════
+
+function getContractorByName(name) {
+  if (!state.contractors) state.contractors = [];
+  return state.contractors.find(c => c.name === name);
+}
+
+function ensureContractors() {
+  if (!state.contractors) state.contractors = [];
+  // auto-create stubs for parties found in expenses but not yet in contractors list
+  state.expenses.forEach(e => {
+    const name = (e.party || '').trim();
+    if (name && !state.contractors.find(c => c.name === name)) {
+      state.contractors.push({ id:'c'+Date.now()+Math.random(), name, phone:'', specialty:'', notes:'', agreed:{}, appointments:[] });
+    }
+  });
+}
+
+function openAddContractor() {
+  populateSelect('cf-specialty', state.bands.map(b=>({id:b,name:b})), 'id','name');
+  document.getElementById('cf-name').value = '';
+  document.getElementById('cf-phone').value = '';
+  document.getElementById('cf-notes').value = '';
+  openModal('modal-contractor');
+}
+
+function saveContractor() {
+  const name = document.getElementById('cf-name').value.trim();
+  if (!name) { toast('اكتب اسم المقاول','error'); return; }
+  if (!state.contractors) state.contractors = [];
+  if (state.contractors.find(c=>c.name===name)) { toast('المقاول موجود بالفعل','error'); return; }
+  state.contractors.push({
+    id:'c'+Date.now(),
+    name,
+    phone: document.getElementById('cf-phone').value.trim(),
+    specialty: document.getElementById('cf-specialty').value,
+    notes: document.getElementById('cf-notes').value.trim(),
+    agreed: {},
+    appointments: []
+  });
+  save(); closeModal('modal-contractor');
+  renderContractors(); renderNav();
+  toast('✅ تم إضافة المقاول','success');
+}
+
+function deleteContractor(id) {
+  if (!confirm('حذف هذا المقاول؟')) return;
+  state.contractors = state.contractors.filter(c => c.id !== id);
+  save(); renderContractors(); toast('تم الحذف');
+}
+
+function openAddAppointment(contractorId) {
+  document.getElementById('af-contractor-id').value = contractorId;
+  document.getElementById('af-desc').value = '';
+  document.getElementById('af-date').value = today();
+  populateSelect('af-project', state.projects, 'id','name');
+  openModal('modal-appointment');
+}
+
+function saveAppointment() {
+  const cid  = document.getElementById('af-contractor-id').value;
+  const date = document.getElementById('af-date').value;
+  const desc = document.getElementById('af-desc').value.trim();
+  const projId = document.getElementById('af-project').value;
+  if (!date || !desc) { toast('اكتب التاريخ والوصف','error'); return; }
+  const c = state.contractors.find(c=>c.id===cid);
+  if (!c) return;
+  if (!c.appointments) c.appointments = [];
+  c.appointments.push({ id:'a'+Date.now(), projectId:projId, date, desc, done:false });
+  save(); closeModal('modal-appointment');
+  renderContractors(); toast('✅ تم حفظ الموعد','success');
+}
+
+function toggleAppointmentDone(contractorId, apptId) {
+  const c = state.contractors?.find(c=>c.id===contractorId);
+  if (!c) return;
+  const a = c.appointments?.find(a=>a.id===apptId);
+  if (a) { a.done = !a.done; save(); renderContractors(); }
+}
+
+function deleteAppointment(contractorId, apptId) {
+  const c = state.contractors?.find(c=>c.id===contractorId);
+  if (!c) return;
+  c.appointments = c.appointments.filter(a=>a.id!==apptId);
+  save(); renderContractors(); toast('تم الحذف');
+}
+
+function saveAgreedForProject(contractorId, projectId, val) {
+  const c = state.contractors?.find(c=>c.id===contractorId);
+  if (!c) return;
+  if (!c.agreed) c.agreed = {};
+  c.agreed[projectId] = parseFloat(val)||0;
+  save();
+}
+
+function renderContractors() {
+  ensureContractors();
+  const contractors = [...(state.contractors||[])].sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  document.getElementById('contractors-count').textContent = contractors.length + ' مقاول / مورد';
+
+  if (!contractors.length) {
+    document.getElementById('contractors-body').innerHTML = '<div class="empty" style="padding:50px"><div class="icon">👷</div><p>لا توجد مقاولون — أضف مقاولاً من الزرار بالأعلى</p></div>';
+    return;
+  }
+
+  const todayStr = today();
+
+  document.getElementById('contractors-body').innerHTML = contractors.map((c, idx) => {
+    // Collect this contractor's expenses
+    const exps = state.expenses.filter(e => (e.party||'').trim() === c.name);
+    const totalSpent = exps.reduce((s,e)=>s+e.amount,0);
+    const totalPaid  = exps.filter(e=>e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+    const totalPend  = exps.filter(e=>e.status==='معلق').reduce((s,e)=>s+e.amount,0);
+
+    // Agreed total across all projects
+    const agreedTotal = Object.values(c.agreed||{}).reduce((s,v)=>s+Number(v||0),0);
+    const remaining   = agreedTotal - totalPaid;
+
+    // Appointments
+    const appts = (c.appointments||[]).sort((a,b)=>a.date.localeCompare(b.date));
+    const pendingAppts = appts.filter(a=>!a.done);
+
+    // ── TAB: INFO ──
+    const infoHTML = `
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">رقم الهاتف</div>
+          <div class="info-val">${c.phone ? `<a href="tel:${c.phone}" style="color:var(--accent-2);text-decoration:none">📞 ${c.phone}</a>` : '<span style="color:var(--ink-muted)">—</span>'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">التخصص</div>
+          <div class="info-val">${c.specialty ? `<span class="tag tag-blue">${c.specialty}</span>` : '<span style="color:var(--ink-muted)">—</span>'}</div>
+        </div>
+        ${c.notes ? `<div class="info-item" style="grid-column:1/-1"><div class="info-label">ملاحظات</div><div class="info-val" style="font-weight:400;color:var(--ink-soft)">${c.notes}</div></div>` : ''}
+      </div>`;
+
+    // ── TAB: BALANCE ──
+    const projectRows = state.projects.map(p => {
+      const pExps  = exps.filter(e=>e.projectId===p.id);
+      if (!pExps.length && !c.agreed?.[p.id]) return '';
+      const pSpent = pExps.reduce((s,e)=>s+e.amount,0);
+      const pPaid  = pExps.filter(e=>e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+      const pPend  = pExps.filter(e=>e.status==='معلق').reduce((s,e)=>s+e.amount,0);
+      const pAgreed= Number(c.agreed?.[p.id]||0);
+      const pRem   = pAgreed - pPaid;
+
+      const detailRows = pExps.sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`
+        <div class="contract-row">
+          <span>${e.desc}${e.notes?` <span style="color:var(--ink-muted)">· ${e.notes}</span>`:''}</span>
+          <span style="color:var(--ink-muted)">${fmtDate(e.date)}</span>
+          <span><span class="tag tag-gray" style="font-size:10px">${e.band}</span></span>
+          <span style="font-family:'Tajawal',sans-serif;font-weight:700">${fmt(e.amount)}</span>
+          <span class="${e.status==='تم الدفع'?'s-paid':e.status==='معلق'?'s-pend':'s-part'}">${e.status}</span>
+          <span>${e.image?`<img src="${e.image}" class="receipt-thumb" onclick="viewImg('${e.image}')">`:'—'}</span>
+        </div>`).join('');
+
+      return `
+        <div class="proj-breakdown">
+          <div class="proj-breakdown-head">
+            <span><span style="color:${p.color}">●</span> ${p.name}</span>
+            <div style="display:flex;gap:14px;font-size:11px">
+              <span>الاتفاق: <input type="number" value="${pAgreed||''}" placeholder="0"
+                style="width:90px;padding:3px 8px;border:1.5px solid var(--line);border-radius:5px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:12px;direction:rtl"
+                onchange="saveAgreedForProject('${c.id}','${p.id}',this.value)"
+                oninput="recalcBalance('${c.id}','bal-p-${c.id}-${p.id}','${p.id}',this.value)"> ج
+              </span>
+              <span style="color:var(--accent-3)">صُرف: <strong id="bal-spent-${c.id}-${p.id}">${fmt(pPaid)}</strong></span>
+              <span style="color:${pRem>=0?'#2E75B6':'var(--warn)'}">متبقي: <strong id="bal-p-${c.id}-${p.id}">${pAgreed?fmt(pRem):'—'}</strong></span>
+            </div>
+          </div>
+          ${pExps.length ? `
+            <div class="contract-row head">
+              <span>الوصف</span><span>التاريخ</span><span>البند</span><span>المبلغ</span><span>الحالة</span><span>فاتورة</span>
+            </div>
+            ${detailRows}` : `<div style="padding:10px 14px;color:var(--ink-muted);font-size:12px">لا توجد مصاريف مسجلة في هذا المشروع</div>`}
+        </div>`;
+    }).filter(Boolean).join('');
+
+    const balanceHTML = `
+      <div class="balance-bar">
+        <div class="balance-row">
+          <span class="balance-label">إجمالي الاتفاق (كل المشاريع)</span>
+          <span class="balance-val" style="color:var(--ink)">${fmt(agreedTotal)}</span>
+        </div>
+        <div class="balance-row">
+          <span class="balance-label">إجمالي المصاريف المسجلة</span>
+          <span class="balance-val" style="color:var(--accent)">${fmt(totalSpent)}</span>
+        </div>
+        <div class="balance-row">
+          <span class="balance-label">تم الدفع فعلاً</span>
+          <span class="balance-val" style="color:var(--accent-3)">${fmt(totalPaid)}</span>
+        </div>
+        <div class="balance-row">
+          <span class="balance-label">معلق</span>
+          <span class="balance-val" style="color:var(--warn)">${fmt(totalPend)}</span>
+        </div>
+        <div class="balance-row">
+          <span class="balance-label">💰 صافي المتبقي من الاتفاق</span>
+          <span class="balance-val" style="color:${remaining>=0?'#2E75B6':'var(--warn)'}; font-size:16px">${agreedTotal?fmt(remaining):'—'}</span>
+        </div>
+      </div>
+      ${projectRows || '<div style="color:var(--ink-muted);font-size:13px;padding:10px 0">لا توجد مصاريف مسجلة بعد لهذا المقاول</div>'}`;
+
+    // ── TAB: APPOINTMENTS ──
+    const apptHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700">${appts.length ? appts.length + ' موعد' : 'لا توجد مواعيد'}</span>
+        <button class="btn btn-success btn-sm" onclick="openAddAppointment('${c.id}')">+ موعد جديد</button>
+      </div>
+      ${appts.length ? appts.map(a => {
+        const proj = state.projects.find(p=>p.id===a.projectId);
+        const isOverdue = !a.done && a.date < todayStr;
+        const isSoon    = !a.done && !isOverdue && a.date <= new Date(Date.now()+3*86400000).toISOString().slice(0,10);
+        return `
+          <div class="appt-item ${a.done?'done':isOverdue?'appt-overdue':isSoon?'appt-soon':''}">
+            <div>
+              <div class="appt-date">${fmtDate(a.date)} ${isOverdue?'⚠️':isSoon?'⏰':''}</div>
+              <div class="appt-proj">${proj?.name||'—'}</div>
+            </div>
+            <div class="appt-desc">${a.desc} ${a.done?'<span class="tag tag-green" style="font-size:10px">✓ تم</span>':''}</div>
+            <div class="appt-actions">
+              <button class="btn btn-ghost btn-sm" onclick="toggleAppointmentDone('${c.id}','${a.id}')" title="${a.done?'إعادة فتح':'تم التنفيذ'}">${a.done?'↩':'✓'}</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--warn)" onclick="deleteAppointment('${c.id}','${a.id}')">✕</button>
+            </div>
+          </div>`;
+      }).join('') : '<div class="empty" style="padding:20px"><p>لا توجد مواعيد — أضف موعداً من الزرار</p></div>'}`;
+
+    const badge = pendingAppts.length ? `<span class="nav-badge">${pendingAppts.length}</span>` : '';
+
+    return `
+      <div class="contractor-card">
+        <div class="contractor-header" onclick="toggleContractor('ctd-${c.id}')">
+          <div style="flex:1;min-width:0">
+            <div class="contractor-name">
+              👷 ${c.name}
+              ${c.specialty ? `<span class="tag tag-blue" style="font-size:10px;margin-right:6px">${c.specialty}</span>` : ''}
+            </div>
+            <div class="contractor-sub">
+              ${c.phone?`📞 ${c.phone} · `:''}
+              ${exps.length} بند · ${Object.keys(c.agreed||{}).filter(k=>c.agreed[k]>0).length} مشروع
+              ${pendingAppts.length ? ` · <span style="color:var(--warn)">⏰ ${pendingAppts.length} موعد قادم</span>` : ''}
+            </div>
+          </div>
+          <div class="contractor-totals">
+            <div class="c-total-item">
+              <div class="c-total-label">الاتفاق</div>
+              <div class="c-total-val">${agreedTotal?fmt(agreedTotal):'—'}</div>
+            </div>
+            <div class="c-total-item">
+              <div class="c-total-label">تم الدفع</div>
+              <div class="c-total-val" style="color:var(--accent-3)">${fmt(totalPaid)}</div>
+            </div>
+            <div class="c-total-item">
+              <div class="c-total-label">المتبقي</div>
+              <div class="c-total-val" style="color:${remaining>=0?'var(--accent-2)':'var(--warn)'}">${agreedTotal?fmt(remaining):'—'}</div>
+            </div>
+            <div style="font-size:20px;color:var(--ink-muted);transition:transform .25s;margin-right:4px" id="arrow-${c.id}">›</div>
+          </div>
+        </div>
+
+        <div class="contractor-detail" id="ctd-${c.id}">
+          <div class="tabs" id="tabs-${c.id}">
+            <div class="tab active" onclick="switchTab('${c.id}','info')">📋 البيانات</div>
+            <div class="tab" onclick="switchTab('${c.id}','balance')">💰 الرصيد والمصاريف</div>
+            <div class="tab" onclick="switchTab('${c.id}','appointments')">📅 المواعيد ${pendingAppts.length?`<span class="nav-badge">${pendingAppts.length}</span>`:''}</div>
+          </div>
+          <div id="tab-info-${c.id}" class="tab-pane active">${infoHTML}</div>
+          <div id="tab-balance-${c.id}" class="tab-pane">${balanceHTML}</div>
+          <div id="tab-appointments-${c.id}" class="tab-pane">${apptHTML}</div>
+
+          <div style="border-top:1px solid var(--line);padding-top:10px;margin-top:4px;display:flex;justify-content:flex-end">
+            <button class="btn btn-ghost btn-sm" style="color:var(--warn)" onclick="deleteContractor('${c.id}')">🗑️ حذف المقاول</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function switchTab(contractorId, tab) {
+  ['info','balance','appointments'].forEach(t => {
+    document.getElementById(`tab-${t}-${contractorId}`)?.classList.toggle('active', t===tab);
+  });
+  document.querySelectorAll(`#tabs-${contractorId} .tab`).forEach((el,i) => {
+    el.classList.toggle('active', ['info','balance','appointments'][i]===tab);
+  });
+}
+
+function toggleContractor(id) {
+  const el = document.getElementById(id);
+  const cid = id.replace('ctd-','');
+  const arrow = document.getElementById('arrow-' + cid);
+  const isOpen = el.classList.toggle('open');
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(90deg)' : '';
+}
+
+function recalcBalance(contractorId, balElId, projectId, agreedVal) {
+  const agreed = parseFloat(agreedVal)||0;
+  const paid   = state.expenses.filter(e=>e.projectId===projectId && (e.party||'').trim() === (state.contractors?.find(c=>c.id===contractorId)?.name||'') && e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+  const rem    = agreed - paid;
+  const el     = document.getElementById(balElId);
+  if (el) { el.textContent = agreed ? fmt(rem) : '—'; el.style.color = rem>=0?'#2E75B6':'var(--warn)'; }
+}
+
+// legacy stubs kept for safety
+function saveAgreed() {}
+function updateBalance() {}
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+function toast(msg, type='') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function fmt(n)    { return Number(n||0).toLocaleString('ar-EG') + ' ج'; }
+function today()   { return new Date().toISOString().slice(0,10); }
+function fmtDate(d){ if(!d) return '—'; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function pct(a,b,raw){ const v=b?Math.round(a/b*100):0; return raw?v:(v+'%'); }
+
+function statusTag(s) {
+  const map = { 'تم الدفع':'green', 'معلق':'red', 'جزئي':'orange' };
+  return `<span class="tag tag-${map[s]||'gray'}">${s||'—'}</span>`;
+}
+
+function populateSelect(id, items, val, label) {
+  const el = document.getElementById(id); if(!el) return;
+  el.innerHTML = items.map(i=>`<option value="${i[val]}">${i[label]}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// TOPBAR EXPORT BUTTONS
+// ═══════════════════════════════════════════════════
+function updateTopbarExport() {
+  const wrap = document.getElementById('topbar-export-btns');
+  wrap.innerHTML = '';
+  if (currentPage === 'project' && currentProjectId) {
+    wrap.style.display = 'flex';
+    wrap.innerHTML = `
+      <button class="btn btn-secondary btn-sm" onclick="exportProjectExcel('${currentProjectId}')">📊 Excel</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportProjectPDF('${currentProjectId}')">📄 PDF للعميل</button>`;
+  } else if (currentPage === 'all') {
+    wrap.style.display = 'flex';
+    wrap.innerHTML = `
+      <button class="btn btn-secondary btn-sm" onclick="exportAllExcel()">📊 Excel</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportAllPDF()">📄 PDF</button>`;
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// EXCEL EXPORT
+// ═══════════════════════════════════════════════════
+function buildExpenseRows(expenses) {
+  return expenses.map(e => {
+    const proj = state.projects.find(p => p.id === e.projectId);
+    return {
+      'التاريخ':     e.date,
+      'المشروع':     proj?.name || '—',
+      'العميل':      proj?.client || '—',
+      'البند':       e.band,
+      'الوصف':       e.desc,
+      'الطرف':       e.party || '—',
+      'المبلغ':      e.amount,
+      'الحالة':      e.status,
+      'ملاحظات':     e.notes || ''
+    };
+  });
+}
+
+function exportProjectExcel(projId) {
+  const proj = state.projects.find(p => p.id === projId);
+  const exps = state.expenses.filter(e => e.projectId === projId).sort((a,b) => b.date.localeCompare(a.date));
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: All expenses
+  const rows = buildExpenseRows(exps);
+  const ws1 = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
+  ws1['!cols'] = [10,30,18,14,35,18,14,12,20].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws1, 'المصاريف التفصيلية');
+
+  // Sheet 2: Band summary
+  const bandTotals = {};
+  exps.forEach(e => { bandTotals[e.band] = (bandTotals[e.band] || 0) + e.amount; });
+  const total = exps.reduce((s,e) => s+e.amount, 0);
+  const summRows = Object.entries(bandTotals).sort((a,b)=>b[1]-a[1]).map(([band,amt]) => ({
+    'البند': band,
+    'الإجمالي': amt,
+    'النسبة': total ? (amt/total*100).toFixed(1)+'%' : '0%'
+  }));
+  summRows.push({ 'البند': 'الإجمالي الكلي', 'الإجمالي': total, 'النسبة': '100%' });
+  const ws2 = XLSX.utils.json_to_sheet(summRows);
+  ws2['!cols'] = [{ wch: 20 }, { wch: 16 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, ws2, 'ملخص حسب البند');
+
+  // Sheet 3: Status summary
+  const statTotals = {};
+  exps.forEach(e => { statTotals[e.status] = (statTotals[e.status]||0) + e.amount; });
+  const ws3 = XLSX.utils.json_to_sheet(Object.entries(statTotals).map(([s,a]) => ({ 'الحالة':s, 'الإجمالي':a })));
+  ws3['!cols'] = [{ wch: 14 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws3, 'ملخص الحالة');
+
+  XLSX.writeFile(wb, `مصاريف_${(proj?.name||'مشروع').replace(/\s+/g,'_')}.xlsx`);
+  toast('✅ تم تصدير Excel','success');
+}
+
+function exportAllExcel() {
+  const exps = [...state.expenses].sort((a,b) => b.date.localeCompare(a.date));
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: All
+  const ws1 = XLSX.utils.json_to_sheet(buildExpenseRows(exps));
+  ws1['!cols'] = [10,30,18,14,35,18,14,12,20].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws1, 'كل المصاريف');
+
+  // Sheet 2: Per project
+  const projRows = state.projects.map(p => {
+    const tot = exps.filter(e=>e.projectId===p.id).reduce((s,e)=>s+e.amount,0);
+    const cnt = exps.filter(e=>e.projectId===p.id).length;
+    const paidTot = exps.filter(e=>e.projectId===p.id&&e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+    return { 'المشروع':p.name, 'العميل':p.client||'—', 'الميزانية':p.budget||0, 'إجمالي المصاريف':tot, 'تم الدفع':paidTot, 'عدد البنود':cnt, 'المتبقي':(p.budget||0)-tot };
+  });
+  const ws2 = XLSX.utils.json_to_sheet(projRows);
+  ws2['!cols'] = [30,18,14,16,14,12,14].map(w=>({ wch:w }));
+  XLSX.utils.book_append_sheet(wb, ws2, 'ملخص المشاريع');
+
+  // Sheet 3: Bands
+  const bandTotals = {};
+  exps.forEach(e=>{ bandTotals[e.band]=(bandTotals[e.band]||0)+e.amount; });
+  const total = exps.reduce((s,e)=>s+e.amount,0);
+  const ws3 = XLSX.utils.json_to_sheet(Object.entries(bandTotals).sort((a,b)=>b[1]-a[1]).map(([band,amt])=>({
+    'البند':band, 'الإجمالي':amt, 'النسبة': total?(amt/total*100).toFixed(1)+'%':'0%'
+  })));
+  ws3['!cols'] = [{ wch:20 },{ wch:14 },{ wch:10 }];
+  XLSX.utils.book_append_sheet(wb, ws3, 'ملخص البنود');
+
+  XLSX.writeFile(wb, `سجل_المصاريف_${new Date().toLocaleDateString('ar-EG')}.xlsx`);
+  toast('✅ تم تصدير Excel','success');
+}
+
+// ═══════════════════════════════════════════════════
+// PDF EXPORT (print-based, professional)
+// ═══════════════════════════════════════════════════
+function buildPrintHTML(title, subtitle, tableHTML, summaryHTML, footerNote) {
+  const now = new Date().toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Cairo',sans-serif; color:#1a1a2e; background:#fff; font-size:13px; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; padding:14mm 12mm; }
+
+  /* HEADER */
+  .header { background:linear-gradient(135deg,#1F3864 0%,#2E75B6 100%); color:#fff; padding:20px 24px; border-radius:10px; margin-bottom:18px; }
+  .header-top { display:flex; justify-content:space-between; align-items:flex-start; }
+  .brand { font-size:11px; opacity:.7; margin-bottom:6px; }
+  .title { font-size:22px; font-weight:900; line-height:1.2; }
+  .subtitle { font-size:13px; opacity:.85; margin-top:5px; }
+  .header-meta { text-align:left; font-size:11px; opacity:.8; line-height:1.8; }
+  .header-meta strong { display:block; font-size:14px; opacity:1; margin-bottom:4px; }
+
+  /* KPI STRIP */
+  .kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
+  .kpi { background:#f7f8fc; border:1px solid #e0e4ee; border-radius:8px; padding:12px 14px; border-right:4px solid var(--c,#2E75B6); }
+  .kpi-label { font-size:10px; color:#666; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .kpi-val { font-size:18px; font-weight:900; margin-top:4px; color:#1a1a2e; }
+
+  /* SECTION */
+  .section { margin-bottom:18px; }
+  .section-title { font-size:13px; font-weight:800; color:#1F3864; padding:8px 12px; background:#eef2f9; border-radius:6px 6px 0 0; border-right:4px solid #1F3864; margin-bottom:0; }
+
+  /* TABLE */
+  table { width:100%; border-collapse:collapse; }
+  thead th { background:#1F3864; color:#fff; padding:8px 10px; font-size:11px; font-weight:700; text-align:right; }
+  tbody tr:nth-child(even) { background:#f7f8fc; }
+  tbody tr:nth-child(odd)  { background:#fff; }
+  tbody td { padding:7px 10px; font-size:12px; border-bottom:1px solid #e8eaf0; vertical-align:middle; }
+  tfoot td { background:#1F3864; color:#fff; padding:9px 10px; font-weight:700; font-size:13px; }
+  .amt { font-weight:800; font-size:13px; }
+  .muted { color:#888; font-size:11px; }
+
+  /* SUMMARY GRID */
+  .summ-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+  .summ-card { border:1px solid #e0e4ee; border-radius:8px; overflow:hidden; }
+  .summ-head { background:#2E75B6; color:#fff; padding:8px 12px; font-size:11px; font-weight:700; }
+  .summ-row { display:flex; justify-content:space-between; align-items:center; padding:7px 12px; border-bottom:1px solid #f0f2f8; font-size:12px; }
+  .summ-row:last-child { border-bottom:none; }
+  .summ-row strong { font-weight:800; }
+
+  /* BAR */
+  .bar-wrap { flex:1; height:6px; background:#e8eaf0; border-radius:3px; overflow:hidden; margin:0 10px; }
+  .bar-fill { height:100%; border-radius:3px; background:#2E75B6; }
+
+  /* FINANCIAL BOX */
+  .fin-box { border:2px solid #1F3864; border-radius:10px; overflow:hidden; margin-bottom:18px; }
+  .fin-row { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid #e8eaf0; }
+  .fin-row:last-child { border-bottom:none; background:#1F3864; color:#fff; }
+  .fin-label { font-weight:700; font-size:13px; }
+  .fin-val { font-size:16px; font-weight:900; }
+
+  /* STATUS */
+  .s-paid   { color:#1e8449; font-weight:700; }
+  .s-pend   { color:#c0392b; font-weight:700; }
+  .s-part   { color:#ca6f1e; font-weight:700; }
+
+  /* FOOTER */
+  .footer { margin-top:24px; padding-top:12px; border-top:1px solid #dde; display:flex; justify-content:space-between; font-size:10px; color:#888; }
+  .sig-row { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:24px; }
+  .sig-box { border-top:1.5px solid #555; padding-top:8px; text-align:center; font-size:11px; color:#555; }
+
+  @media print {
+    body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .page { padding:10mm; }
+    @page { margin:5mm; size:A4; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  ${summaryHTML}
+  ${tableHTML}
+  <div class="sig-row">
+    <div class="sig-box">توقيع العميل</div>
+    <div class="sig-box">توقيع المهندس المشرف</div>
+  </div>
+  <div class="footer">
+    <span>${footerNote}</span>
+    <span>تاريخ الإصدار: ${now}</span>
+  </div>
+</div>
+<script>window.onload=()=>{ window.print(); }<\/script>
+</body></html>`;
+}
+
+function statusClass(s) {
+  return s==='تم الدفع'?'s-paid':s==='معلق'?'s-pend':'s-part';
+}
+
+function exportProjectPDF(projId) {
+  const proj = state.projects.find(p=>p.id===projId);
+  if(!proj) return;
+  const exps = state.expenses.filter(e=>e.projectId===projId).sort((a,b)=>b.date.localeCompare(a.date));
+  const total = exps.reduce((s,e)=>s+e.amount,0);
+  const paid  = exps.filter(e=>e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+  const pend  = exps.filter(e=>e.status==='معلق').reduce((s,e)=>s+e.amount,0);
+  const budg  = Number(proj.budget||0);
+  const superv= total * 0.15;
+  const rem   = budg - total - superv;
+
+  const bandTotals = {};
+  exps.forEach(e=>{ bandTotals[e.band]=(bandTotals[e.band]||0)+e.amount; });
+  const bandsSorted = Object.entries(bandTotals).sort((a,b)=>b[1]-a[1]);
+  const colors = ['#2E75B6','#c8622a','#27ae60','#8e44ad','#e67e22','#16a085','#d4a017','#e74c3c'];
+
+  const summaryHTML = `
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div class="brand">مكتب الإشراف الهندسي</div>
+          <div class="title">بيان حسابات المشروع</div>
+          <div class="subtitle">${proj.name}</div>
+        </div>
+        <div class="header-meta">
+          <strong>${proj.client||'—'}</strong>
+          الميزانية: ${Number(proj.budget||0).toLocaleString('ar-EG')} ج<br>
+          عدد البنود: ${exps.length}
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi" style="--c:#2E75B6"><div class="kpi-label">إجمالي المصاريف</div><div class="kpi-val">${total.toLocaleString('ar-EG')} ج</div></div>
+      <div class="kpi" style="--c:#27ae60"><div class="kpi-label">تم الدفع</div><div class="kpi-val">${paid.toLocaleString('ar-EG')} ج</div></div>
+      <div class="kpi" style="--c:#e74c3c"><div class="kpi-label">معلق</div><div class="kpi-val">${pend.toLocaleString('ar-EG')} ج</div></div>
+      <div class="kpi" style="--c:${rem>=0?'#27ae60':'#e74c3c'}"><div class="kpi-label">المتبقي من الميزانية</div><div class="kpi-val">${Math.abs(rem).toLocaleString('ar-EG')} ج</div></div>
+    </div>
+
+    <div class="summ-grid">
+      <div class="summ-card">
+        <div class="summ-head">📊 توزيع المصاريف حسب البند</div>
+        ${bandsSorted.map(([b,a],i)=>`
+          <div class="summ-row">
+            <span style="width:110px;font-weight:600">${b}</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${total?(a/total*100):0}%;background:${colors[i%colors.length]}"></div></div>
+            <span><strong>${a.toLocaleString('ar-EG')}</strong> ج</span>
+            <span class="muted" style="margin-right:8px">${total?(a/total*100).toFixed(0):0}%</span>
+          </div>`).join('')}
+        <div class="summ-row" style="background:#eef2f9;font-weight:800">
+          <span>الإجمالي</span><span></span><span>${total.toLocaleString('ar-EG')} ج</span><span>100%</span>
+        </div>
+      </div>
+
+      <div class="summ-card">
+        <div class="summ-head" style="background:#1F3864">💰 الملخص المالي</div>
+        <div class="fin-box" style="border:none;margin:0">
+          <div class="fin-row"><span class="fin-label">إجمالي الدفعات الواردة</span><span class="fin-val" style="color:#27ae60">${(0).toLocaleString('ar-EG')} ج</span></div>
+          <div class="fin-row"><span class="fin-label">إجمالي المصاريف المنفذة</span><span class="fin-val" style="color:#c0392b">${total.toLocaleString('ar-EG')} ج</span></div>
+          <div class="fin-row"><span class="fin-label">نسبة الإشراف (15%)</span><span class="fin-val" style="color:#2E75B6">${superv.toLocaleString('ar-EG',{maximumFractionDigits:0})} ج</span></div>
+          <div class="fin-row"><span class="fin-label">صافي المتبقي</span><span class="fin-val">${rem.toLocaleString('ar-EG',{maximumFractionDigits:0})} ج</span></div>
+        </div>
+      </div>
+    </div>`;
+
+  const tableHTML = `
+    <div class="section">
+      <div class="section-title">📋 تفاصيل المصاريف</div>
+      <table>
+        <thead><tr><th>#</th><th>التاريخ</th><th>البند</th><th>الوصف</th><th>الطرف</th><th>المبلغ (جنيه)</th><th>الحالة</th></tr></thead>
+        <tbody>
+          ${exps.map((e,i)=>`<tr>
+            <td class="muted">${i+1}</td>
+            <td class="muted">${e.date.split('-').reverse().join('/')}</td>
+            <td><strong>${e.band}</strong></td>
+            <td>${e.desc}${e.notes?`<br><span class="muted">${e.notes}</span>`:''}</td>
+            <td class="muted">${e.party||'—'}</td>
+            <td class="amt">${Number(e.amount).toLocaleString('ar-EG')}</td>
+            <td class="${statusClass(e.status)}">${e.status}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr><td colspan="5">الإجمالي الكلي</td><td>${total.toLocaleString('ar-EG')} ج</td><td></td></tr></tfoot>
+      </table>
+    </div>`;
+
+  const win = window.open('','_blank');
+  win.document.write(buildPrintHTML(proj.name, proj.client, tableHTML, summaryHTML, `بيان مشروع: ${proj.name}`));
+  win.document.close();
+  toast('📄 جارٍ فتح نافذة الطباعة...','success');
+}
+
+function exportAllPDF() {
+  const exps = [...state.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  const total= exps.reduce((s,e)=>s+e.amount,0);
+  const paid = exps.filter(e=>e.status==='تم الدفع').reduce((s,e)=>s+e.amount,0);
+  const pend = exps.filter(e=>e.status==='معلق').reduce((s,e)=>s+e.amount,0);
+
+  const bandTotals = {};
+  exps.forEach(e=>{ bandTotals[e.band]=(bandTotals[e.band]||0)+e.amount; });
+  const bandsSorted = Object.entries(bandTotals).sort((a,b)=>b[1]-a[1]);
+  const colors = ['#2E75B6','#c8622a','#27ae60','#8e44ad','#e67e22','#16a085','#d4a017','#e74c3c'];
+
+  const summaryHTML = `
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div class="brand">مكتب الإشراف الهندسي</div>
+          <div class="title">التقرير المالي الشامل</div>
+          <div class="subtitle">جميع المشاريع</div>
+        </div>
+        <div class="header-meta">
+          <strong>إجمالي المشاريع: ${state.projects.length}</strong>
+          إجمالي البنود: ${exps.length}
+        </div>
+      </div>
+    </div>
+    <div class="kpi-strip">
+      <div class="kpi" style="--c:#2E75B6"><div class="kpi-label">إجمالي المصاريف</div><div class="kpi-val">${total.toLocaleString('ar-EG')} ج</div></div>
+      <div class="kpi" style="--c:#27ae60"><div class="kpi-label">تم الدفع</div><div class="kpi-val">${paid.toLocaleString('ar-EG')} ج</div></div>
+      <div class="kpi" style="--c:#e74c3c"><div class="kpi-label">معلق</div><div class="kpi-val">${pend.toLocaleString('ar-EG')} ج</div></div>
+      <div class="kpi" style="--c:#8e44ad"><div class="kpi-label">عدد المشاريع</div><div class="kpi-val">${state.projects.length}</div></div>
+    </div>
+    <div class="summ-grid">
+      <div class="summ-card">
+        <div class="summ-head">📊 حسب البند (كل المشاريع)</div>
+        ${bandsSorted.map(([b,a],i)=>`
+          <div class="summ-row">
+            <span style="width:110px;font-weight:600">${b}</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${total?(a/total*100):0}%;background:${colors[i%colors.length]}"></div></div>
+            <span><strong>${a.toLocaleString('ar-EG')}</strong> ج</span>
+            <span class="muted" style="margin-right:8px">${total?(a/total*100).toFixed(0):0}%</span>
+          </div>`).join('')}
+      </div>
+      <div class="summ-card">
+        <div class="summ-head" style="background:#1F3864">📁 ملخص المشاريع</div>
+        ${state.projects.map(p=>{
+          const t=exps.filter(e=>e.projectId===p.id).reduce((s,e)=>s+e.amount,0);
+          return `<div class="summ-row">
+            <span style="font-weight:600;font-size:11px">${p.name}</span>
+            <strong>${t.toLocaleString('ar-EG')} ج</strong>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  const tableHTML = `
+    <div class="section">
+      <div class="section-title">📋 جميع المصاريف</div>
+      <table>
+        <thead><tr><th>#</th><th>التاريخ</th><th>المشروع</th><th>البند</th><th>الوصف</th><th>الطرف</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+        <tbody>
+          ${exps.map((e,i)=>{
+            const proj=state.projects.find(p=>p.id===e.projectId);
+            return `<tr>
+              <td class="muted">${i+1}</td>
+              <td class="muted">${e.date.split('-').reverse().join('/')}</td>
+              <td><strong style="font-size:11px">${proj?.name||'—'}</strong></td>
+              <td>${e.band}</td>
+              <td>${e.desc}</td>
+              <td class="muted">${e.party||'—'}</td>
+              <td class="amt">${Number(e.amount).toLocaleString('ar-EG')}</td>
+              <td class="${statusClass(e.status)}">${e.status}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot><tr><td colspan="6">الإجمالي الكلي</td><td>${total.toLocaleString('ar-EG')} ج</td><td></td></tr></tfoot>
+      </table>
+    </div>`;
+
+  const win = window.open('','_blank');
+  win.document.write(buildPrintHTML('التقرير المالي الشامل','جميع المشاريع',tableHTML,summaryHTML,'تقرير شامل لجميع المشاريع'));
+  win.document.close();
+  toast('📄 جارٍ فتح نافذة الطباعة...','success');
+}
+
+// ═══════════════════════════════════════════════════
+// GOOGLE DRIVE INTEGRATION
+// ═══════════════════════════════════════════════════
+const GDRIVE_CLIENT_ID = '462579374926-rdlljema5j4alherd72j1a6cll0tboba.apps.googleusercontent.com';
+const GDRIVE_SCOPE     = 'https://www.googleapis.com/auth/drive.appdata';
+const GDRIVE_FILE_NAME = 'maktab_expenses_backup.json';
+let gdriveToken = null;
+
+function gdriveSetStatus(msg, color='var(--ink-muted)') {
+  const el = document.getElementById('gdrive-status');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+function gdriveSignIn() {
+  return new Promise((resolve, reject) => {
+    if (gdriveToken) { resolve(gdriveToken); return; }
+
+    // Load Google Identity Services
+    if (!window.google?.accounts?.oauth2) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.onload = () => doSignIn(resolve, reject);
+      script.onerror = () => reject(new Error('تعذّر تحميل Google'));
+      document.head.appendChild(script);
+    } else {
+      doSignIn(resolve, reject);
+    }
+  });
+}
+
+function doSignIn(resolve, reject) {
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: GDRIVE_SCOPE,
+    callback: (resp) => {
+      if (resp.error) { reject(new Error(resp.error)); return; }
+      gdriveToken = resp.access_token;
+      document.getElementById('gdrive-footer').style.display = 'block';
+      resolve(gdriveToken);
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function gdriveGetFileId() {
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${GDRIVE_FILE_NAME}'&fields=files(id,name,modifiedTime)`,
+    { headers: { Authorization: 'Bearer ' + gdriveToken } }
+  );
+  const data = await res.json();
+  return data.files?.[0] || null;
+}
+
+async function gdriveSave() {
+  gdriveSetStatus('جارٍ الاتصال...', '#f59e0b');
+  try {
+    const token = await gdriveSignIn();
+    gdriveSetStatus('جارٍ الحفظ...', '#f59e0b');
+
+    const content = JSON.stringify(state, null, 2);
+    const blob    = new Blob([content], { type: 'application/json' });
+
+    // Check if file already exists
+    const existing = await gdriveGetFileId();
+
+    let url, method;
+    if (existing) {
+      url    = `https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media`;
+      method = 'PATCH';
+    } else {
+      // Create with metadata first
+      const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: GDRIVE_FILE_NAME, parents: ['appDataFolder'] })
+      });
+      const metaData = await meta.json();
+      url    = `https://www.googleapis.com/upload/drive/v3/files/${metaData.id}?uploadType=media`;
+      method = 'PATCH';
+    }
+
+    const upload = await fetch(url, {
+      method,
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: content
+    });
+
+    if (upload.ok) {
+      const now = new Date().toLocaleTimeString('ar-EG');
+      gdriveSetStatus('✅ تم الحفظ ' + now, '#27ae60');
+      toast('✅ تم الحفظ على Google Drive', 'success');
+    } else {
+      throw new Error('فشل الرفع');
+    }
+  } catch(e) {
+    console.error(e);
+    gdriveSetStatus('❌ ' + (e.message||'خطأ'), '#e74c3c');
+    toast('حدث خطأ: ' + (e.message||'حاول تاني'), 'error');
+  }
+}
+
+async function gdriveLoad() {
+  gdriveSetStatus('جارٍ الاتصال...', '#f59e0b');
+  try {
+    await gdriveSignIn();
+    gdriveSetStatus('جارٍ البحث عن النسخة...', '#f59e0b');
+
+    const file = await gdriveGetFileId();
+    if (!file) {
+      gdriveSetStatus('لا توجد نسخة محفوظة', '#e74c3c');
+      toast('لم يتم العثور على نسخة محفوظة على Drive', 'error');
+      return;
+    }
+
+    const lastSaved = new Date(file.modifiedTime).toLocaleString('ar-EG');
+    if (!confirm(`هيتم استيراد النسخة المحفوظة بتاريخ:\n${lastSaved}\n\nهيتم استبدال البيانات الحالية. متأكد؟`)) {
+      gdriveSetStatus('', '');
+      return;
+    }
+
+    gdriveSetStatus('جارٍ التحميل...', '#f59e0b');
+    const res  = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+      { headers: { Authorization: 'Bearer ' + gdriveToken } }
+    );
+    const data = await res.json();
+    state = data;
+    save();
+    goto('home');
+    const now = new Date().toLocaleTimeString('ar-EG');
+    gdriveSetStatus('✅ تم الاستيراد ' + now, '#27ae60');
+    toast('✅ تم الاستيراد من Google Drive', 'success');
+  } catch(e) {
+    console.error(e);
+    gdriveSetStatus('❌ ' + (e.message||'خطأ'), '#e74c3c');
+    toast('حدث خطأ: ' + (e.message||'حاول تاني'), 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PWA — MANIFEST + SERVICE WORKER
+// ═══════════════════════════════════════════════════
+
+// Generate SVG icon as data URI
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#1F3864"/>
+  <text x="256" y="340" font-size="260" text-anchor="middle" font-family="Arial" fill="white">🏗</text>
+</svg>`;
+const ICON_URL = 'data:image/svg+xml,' + encodeURIComponent(ICON_SVG);
+
+// Inject manifest dynamically (works in single-file HTML)
+const manifest = {
+  name: 'مكتب الإشراف — سجل المصاريف',
+  short_name: 'مكتب الإشراف',
+  description: 'نظام متابعة مصاريف المشاريع الهندسية',
+  start_url: './',
+  display: 'standalone',
+  orientation: 'portrait',
+  background_color: '#f7f6f2',
+  theme_color: '#1F3864',
+  lang: 'ar',
+  dir: 'rtl',
+  icons: [
+    { src: ICON_URL, sizes: '192x192', type: 'image/svg+xml' },
+    { src: ICON_URL, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+  ]
+};
+const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+const manifestURL  = URL.createObjectURL(manifestBlob);
+document.getElementById('pwa-manifest').href = manifestURL;
+document.getElementById('pwa-icon').href = ICON_URL;
+
+// Service Worker — caches everything for offline use
+const SW_CODE = `
+const CACHE = 'maktab-v1';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (!res || res.status !== 200) return res;
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => cached);
+    })
+  );
+});`;
+
+if ('serviceWorker' in navigator) {
+  const swBlob = new Blob([SW_CODE], { type: 'application/javascript' });
+  const swURL  = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swURL, { scope: './' })
+    .then(() => console.log('✅ Service Worker registered'))
+    .catch(e => console.log('SW error:', e));
+}
+
+// Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show banner after 3 seconds
+  setTimeout(() => document.getElementById('pwa-banner').classList.add('show'), 3000);
+});
+
+function installPWA() {
+  if (!deferredPrompt) {
+    // iOS fallback instructions
+    toast('على iOS: اضغط زر المشاركة ثم "Add to Home Screen"');
+    document.getElementById('pwa-banner').classList.remove('show');
+    return;
+  }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(result => {
+    if (result.outcome === 'accepted') {
+      toast('✅ تم تثبيت التطبيق!', 'success');
+    }
+    deferredPrompt = null;
+    document.getElementById('pwa-banner').classList.remove('show');
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  toast('✅ تم تثبيت التطبيق بنجاح!', 'success');
+  document.getElementById('pwa-banner').classList.remove('show');
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+goto('home');
+</script>
+</body>
+</html>
